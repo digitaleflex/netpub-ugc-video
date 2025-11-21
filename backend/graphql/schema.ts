@@ -175,6 +175,32 @@ export const typeDefs = gql`
     createAdminUser: User
     createConversation: Conversation!
 
+    updateConversation(
+      conversationId: String!
+      clientName: String
+      clientEmail: String
+      clientPhone: String
+    ): Conversation!
+
+    createAppointment(
+      conversationId: String!
+      service: String!
+      date: String!
+      time: String!
+      clientName: String
+      clientEmail: String
+      clientPhone: String
+    ): Appointment!
+
+    createOrder(
+      conversationId: String!
+      service: String!
+      details: String!
+      clientName: String
+      clientEmail: String
+      clientPhone: String
+    ): Order!
+
 
 
 

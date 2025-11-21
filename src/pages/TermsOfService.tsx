@@ -1,5 +1,5 @@
 import React from 'react';
-import "../src/assets/styles/LegalPages.css";
+import "../assets/styles/LegalPages.css";
 
 const TermsOfService: React.FC = () => {
   return (

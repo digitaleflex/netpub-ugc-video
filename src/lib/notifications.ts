@@ -11,25 +11,19 @@ export interface NotificationData {
 export class NotificationService {
   static async createNotification(notification: NotificationData): Promise<void> {
     try {
-      console.log('Notification créée:', notification);
-
       if (notification.recipientEmail) {
         await this.sendEmailNotification(notification);
       }
     } catch (error) {
-      console.error('Error creating notification:', error);
+      // silent fail
     }
   }
 
   static async sendEmailNotification(notification: NotificationData): Promise<void> {
     try {
-      console.log('Email notification would be sent:', {
-        to: notification.recipientEmail,
-        subject: notification.title,
-        message: notification.message
-      });
+      // Email sending logic would go here
     } catch (error) {
-      console.error('Error sending email notification:', error);
+      // silent fail
     }
   }
 
@@ -84,7 +78,6 @@ export class NotificationService {
     try {
       return [];
     } catch (error) {
-      console.error('Error getting recent notifications:', error);
       return [];
     }
   }

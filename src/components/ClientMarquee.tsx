@@ -1,5 +1,5 @@
 import React from 'react';
-import { clientNames } from '../src/constants';
+import { clientNames } from '../constants';
 
 const ClientMarquee: React.FC = () => {
   // Duplicate for seamless loop, ensure enough items for the visual

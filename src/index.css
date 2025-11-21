@@ -2998,3 +2998,39 @@ main {
         align-items: start; /* Important pour l'alignement en haut */
     }
 }
+/* Chatbot Mic Button Styles */
+.mic-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mic-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--accent-color);
+}
+
+.mic-button.recording {
+    color: #ef4444; /* Red color for recording */
+    animation: pulse-recording 1.5s infinite;
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes pulse-recording {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}

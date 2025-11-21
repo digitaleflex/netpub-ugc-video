@@ -2,6 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -83,6 +84,9 @@ model Conversation {
   id               String   @id @default(uuid())
   userId           String?
   userName         String?
+  clientEmail      String?
+  clientPhone      String?
+  clientName       String?
   hasAppointment   Boolean  @default(false)
   hasCallScheduled Boolean  @default(false)
   hasOrderPlaced   Boolean  @default(false)

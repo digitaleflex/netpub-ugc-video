@@ -21,7 +21,7 @@ const Home: React.FC = () => {
     const isMobile = screenWidth < 768;
 
     const handleProjectClick = (project: PortfolioProject) => {
-        console.log('Project clicked:', project);
+        // Future implementation: handle project click, e.g., open a modal or navigate to a project page
     };
 
     const featuredProjects = portfolioProjects

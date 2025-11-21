@@ -38,7 +38,7 @@ const ProjectFeedItem: React.FC<ProjectFeedItemProps> = ({ project, isActive }) 
     if (videoRef.current) {
       if (isActive) {
         videoRef.current.play().catch(error => {
-          console.log('Autoplay prevented: ' + error);
+          // Autoplay prevented
         });
       } else {
         videoRef.current.pause();
@@ -109,7 +109,7 @@ const ProjectFeedItem: React.FC<ProjectFeedItemProps> = ({ project, isActive }) 
           }),
         });
       } catch (error) {
-        console.error('Error adding like:', error);
+        // silent fail
         setLikes(originalLikes); // Revert on error
         setLikeCount(originalLikeCount);
       }

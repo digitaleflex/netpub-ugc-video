@@ -28,14 +28,19 @@ export const resolvers = {
       console.log(`✅ ${projects.length} projets récupérés`);
       return projects.map(project => ({
         ...project,
-        likeCount: project._count.likes,
-        commentCount: project._count.comments
+        likeCount: (project as any)._count.likes,
+        commentCount: (project as any)._count.comments
       }));
     },
     project: async (_: any, { id }: { id: string }) => {
-      console.log(`📊 Récupération du projet ${id}`);
+      const idInt = parseInt(id, 10);
+      if (isNaN(idInt)) {
+        console.log(`❌ ID de projet invalide: ${id}`);
+        return null;
+      }
+      console.log(`📊 Récupération du projet ${idInt}`);
       const project = await prisma.project.findUnique({
-        where: { id },
+        where: { id: idInt },
         include: {
           user: true,
           comments: { include: { user: true, replies: { include: { user: true } } } },
@@ -44,14 +49,14 @@ export const resolvers = {
         }
       });
       if (!project) {
-        console.log(`❌ Projet ${id} non trouvé`);
+        console.log(`❌ Projet ${idInt} non trouvé`);
         return null;
       }
-      console.log(`✅ Projet ${id} récupéré`);
+      console.log(`✅ Projet ${idInt} récupéré`);
       return {
         ...project,
-        likeCount: project._count.likes,
-        commentCount: project._count.comments
+        likeCount: (project as any)._count.likes,
+        commentCount: (project as any)._count.comments
       };
     },
     projectsByCategory: async (_: any, { category }: { category: string }) => {
@@ -68,35 +73,43 @@ export const resolvers = {
       console.log(`✅ ${projects.length} projets de catégorie ${category} récupérés`);
       return projects.map(project => ({
         ...project,
-        likeCount: project._count.likes,
-        commentCount: project._count.comments
+        likeCount: (project as any)._count.likes,
+        commentCount: (project as any)._count.comments
       }));
     },
 
     // Comment queries
     comments: async (_: any, { projectId }: { projectId: string }) => {
-      console.log(`📝 Récupération des commentaires pour le projet ${projectId}`);
+      const projectIdInt = parseInt(projectId, 10);
+      if (isNaN(projectIdInt)) {
+        throw new Error('Invalid projectId format');
+      }
+      console.log(`📝 Récupération des commentaires pour le projet ${projectIdInt}`);
       const comments = await prisma.comment.findMany({
-        where: { projectId, parentId: null },
+        where: { projectId: projectIdInt, parentId: null },
         include: {
           user: true,
           replies: { include: { user: true } }
         },
         orderBy: { createdAt: 'desc' }
       });
-      console.log(`✅ ${comments.length} commentaires récupérés pour le projet ${projectId}`);
+      console.log(`✅ ${comments.length} commentaires récupérés pour le projet ${projectIdInt}`);
       return comments;
     },
 
     // Like queries
     likes: async (_: any, { projectId }: { projectId: string }) => {
-      console.log(`❤️ Récupération des likes pour le projet ${projectId}`);
+      const projectIdInt = parseInt(projectId, 10);
+      if (isNaN(projectIdInt)) {
+        throw new Error('Invalid projectId format');
+      }
+      console.log(`❤️ Récupération des likes pour le projet ${projectIdInt}`);
       const likes = await prisma.like.findMany({
-        where: { projectId },
+        where: { projectId: projectIdInt },
         include: { user: true },
         orderBy: { createdAt: 'desc' }
       });
-      console.log(`✅ ${likes.length} likes récupérés pour le projet ${projectId}`);
+      console.log(`✅ ${likes.length} likes récupérés pour le projet ${projectIdInt}`);
       return likes;
     },
 
@@ -142,6 +155,108 @@ export const resolvers = {
       } catch (error) {
         console.error('❌ Erreur lors de la création de la conversation:', error);
         throw new Error('Failed to create conversation');
+      }
+    },
+
+    updateConversation: async (_: any, { conversationId, clientName, clientEmail, clientPhone }: { conversationId: string; clientName?: string; clientEmail?: string; clientPhone?: string }) => {
+      try {
+        const conversation = await prisma.conversation.update({
+          where: { id: conversationId },
+          data: {
+            clientName,
+            clientEmail,
+            clientPhone
+          }
+        });
+        return conversation;
+      } catch (error) {
+        console.error('❌ Erreur lors de la mise à jour de la conversation:', error);
+        throw new Error('Failed to update conversation');
+      }
+    },
+
+    createAppointment: async (_: any, { service, date, time, conversationId }: { service: string; date: string; time: string; conversationId: string }) => {
+      try {
+        console.log(`📅 Création d'un RDV pour la conversation ${conversationId}`);
+
+        // Retrieve client info from conversation
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId }
+        });
+
+        const clientName = conversation?.clientName || 'Inconnu';
+        const clientEmail = conversation?.clientEmail || '';
+        const clientPhone = conversation?.clientPhone || '';
+
+        // Create appointment in DB
+        const appointment = await prisma.appointment.create({
+          data: {
+            service,
+            date: new Date(), // Placeholder, should parse date string if possible or store as string
+            time,
+            clientName,
+            status: 'pending',
+            conversationId
+          }
+        });
+
+        // Send email notification
+        if (clientEmail) {
+          await emailService.sendAppointmentNotification({
+            service,
+            date,
+            time,
+            clientName,
+            clientEmail,
+            clientPhone
+          });
+        }
+
+        return appointment;
+      } catch (error) {
+        console.error('❌ Erreur lors de la création du RDV:', error);
+        throw new Error('Failed to create appointment');
+      }
+    },
+
+    createOrder: async (_: any, { service, details, conversationId }: { service: string; details: string; conversationId: string }) => {
+      try {
+        console.log(`🛒 Création d'une commande pour la conversation ${conversationId}`);
+
+        // Retrieve client info from conversation
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId }
+        });
+
+        const clientName = conversation?.clientName || 'Inconnu';
+        const clientEmail = conversation?.clientEmail || '';
+        const clientPhone = conversation?.clientPhone || '';
+
+        // Create order in DB
+        const order = await prisma.order.create({
+          data: {
+            type: service,
+            clientName,
+            status: 'pending',
+            conversationId
+          }
+        });
+
+        // Send email notification
+        if (clientEmail) {
+          await emailService.sendOrderNotification({
+            service,
+            details,
+            clientName,
+            clientEmail,
+            clientPhone
+          });
+        }
+
+        return order;
+      } catch (error) {
+        console.error('❌ Erreur lors de la création de la commande:', error);
+        throw new Error('Failed to create order');
       }
     },
 
@@ -342,72 +457,72 @@ export const resolvers = {
       }
     },
 
-        removeLike: async (_: any, {
+    removeLike: async (_: any, {
 
-          projectId,
+      projectId,
 
-          anonymousId
+      anonymousId
 
-        }: {
+    }: {
 
-          projectId: string;
+      projectId: string;
 
-          anonymousId: string;
+      anonymousId: string;
 
-        }) => {
+    }) => {
 
-          try {
-            const projectIdInt = parseInt(projectId, 10);
-            if (isNaN(projectIdInt)) {
-              throw new Error('Invalid projectId format');
-            }
+      try {
+        const projectIdInt = parseInt(projectId, 10);
+        if (isNaN(projectIdInt)) {
+          throw new Error('Invalid projectId format');
+        }
 
-            console.log(`💔 Suppression d'un like sur le projet ${projectIdInt} par ${anonymousId}`);
+        console.log(`💔 Suppression d'un like sur le projet ${projectIdInt} par ${anonymousId}`);
 
-    
 
-            const result = await prisma.like.deleteMany({
 
-              where: {
+        const result = await prisma.like.deleteMany({
 
-                projectId: projectIdInt,
+          where: {
 
-                anonymousId,
+            projectId: projectIdInt,
 
-              },
+            anonymousId,
 
-            });
+          },
 
-    
+        });
 
-            console.log(`✅ Like supprimé avec succès sur le projet ${projectIdInt} par ${anonymousId}`);
 
-            return result.count > 0;
 
-          } catch (error) {
+        console.log(`✅ Like supprimé avec succès sur le projet ${projectIdInt} par ${anonymousId}`);
 
-            console.error('❌ Erreur lors de la suppression du like:', error);
+        return result.count > 0;
 
-            throw new Error('Failed to remove like');
+      } catch (error) {
 
-          }
+        console.error('❌ Erreur lors de la suppression du like:', error);
 
-        },
+        throw new Error('Failed to remove like');
 
-    
+      }
 
-        // Dashboard mutations
+    },
 
-        updateAppointmentStatus: (_: any, { appointmentId, status }: { appointmentId: string; status: string }) => DashboardService.updateAppointmentStatus(appointmentId, status),
 
-        updateOrderStatus: (_: any, { orderId, status }: { orderId: string; status: string }) => DashboardService.updateOrderStatus(orderId, status),
 
-        resetChatbotModel: () => DashboardService.resetChatbotModel(),
+    // Dashboard mutations
 
-        deleteConversation: (_: any, { conversationId }: { conversationId: string }) => DashboardService.deleteConversation(conversationId),
+    updateAppointmentStatus: (_: any, { appointmentId, status }: { appointmentId: string; status: string }) => DashboardService.updateAppointmentStatus(appointmentId, status),
 
-        addNoteToConversation: (_: any, { conversationId, note }: { conversationId: string; note: string }) => DashboardService.addNoteToConversation(conversationId, note),
+    updateOrderStatus: (_: any, { orderId, status }: { orderId: string; status: string }) => DashboardService.updateOrderStatus(orderId, status),
 
-      },
+    resetChatbotModel: () => DashboardService.resetChatbotModel(),
 
-    };
+    deleteConversation: (_: any, { conversationId }: { conversationId: string }) => DashboardService.deleteConversation(conversationId),
+
+    addNoteToConversation: (_: any, { conversationId, note }: { conversationId: string; note: string }) => DashboardService.addNoteToConversation(conversationId, note),
+
+  },
+
+};

@@ -15,7 +15,7 @@ const PillNavBar = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    console.log("PillNavBar is rendering. isScrolled:", isScrolled, "location:", location.pathname);
+    
 
     const navItems = [
         { to: "/", icon: Home, label: "Accueil" },
