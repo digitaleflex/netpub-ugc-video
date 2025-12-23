@@ -7,15 +7,37 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx nodemon --exec npx tsx server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "generate": "prisma generate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@graphql-tools/schema": "^10.0.30",
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "apollo-server-express": "^3.13.0",
+    "cors": "^2.8.5",
     "csurf": "^1.11.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.22.1",
+    "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
-    "helmet": "^8.1.0"
+    "graphql": "^16.12.0",
+    "graphql-middleware": "^6.1.35",
+    "helmet": "^8.1.0",
+    "pg": "^8.16.3",
+    "prisma": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.16.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

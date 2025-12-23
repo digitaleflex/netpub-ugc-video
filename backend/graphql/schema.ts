@@ -92,6 +92,11 @@ export const typeDefs = gql`
     commentCount: Int!
   }
 
+  type Trend {
+    value: Float!
+    isUp: Boolean!
+  }
+
   type DashboardStats {
     totalConversations: Int!
     activeConversations: Int!
@@ -110,6 +115,10 @@ export const typeDefs = gql`
     recentOrders: [Order!]!
     recentComments: [Comment!]!
     recentLikes: [Like!]!
+    conversationsTrend: Trend
+    appointmentsTrend: Trend
+    ordersTrend: Trend
+    engagementTrend: Trend
   }
 
   type AnalyticsStats {
@@ -118,6 +127,13 @@ export const typeDefs = gql`
     totalOrders: Int!
     conversionRate: Float!
     mostFrequentIntentions: [Intention!]!
+    messagesTrend: Trend
+    appointmentsTrend: Trend
+    ordersTrend: Trend
+    conversionTrend: Trend
+    systemLatency: Float!
+    systemStatus: String!
+    efficiencyScore: Float!
   }
 
   type Intention {
@@ -246,5 +262,6 @@ export const typeDefs = gql`
     resetChatbotModel: Boolean!
     deleteConversation(conversationId: ID!): Boolean!
     addNoteToConversation(conversationId: ID!, note: String!): Boolean!
+    addChatMessage(conversationId: ID!, sender: String!, text: String!): ChatMessage!
   }
 `;

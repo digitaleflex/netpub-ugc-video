@@ -57,7 +57,7 @@ const Login: React.FC = () => {
           </button>
         </form>
         <div className="login-info">
-          <p><strong>Email admin:</strong> admin@netpub.agency</p>
+          <p><strong>Email admin:</strong> org.netpub@gmail.com</p>
           <p><strong>Mot de passe:</strong> NetpubAdmin2024!</p>
         </div>
       </div>

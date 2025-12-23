@@ -21,7 +21,7 @@ const prendreRendezVous: FunctionDeclaration = {
         properties: {
             service: {
                 type: Type.STRING,
-                description: `Le service qui intéresse le client. Doit être l'une des options suivantes : '${PortfolioCategory.VIDEO_UGC}', '${PortfolioCategory.VIDEO_SPOT_PUBLICITAIRE}', ou '${PortfolioCategory.STRATEGY}'.`,
+                description: `Le service qui intéresse le client. Doit être l'une des options suivantes : '${PortfolioCategory.VIDEO_UGC}' ou '${PortfolioCategory.VIDEO_SPOT_PUBLICITAIRE}'.`,
             },
             date: {
                 type: Type.STRING,
@@ -44,7 +44,7 @@ const passerCommande: FunctionDeclaration = {
         properties: {
             service: {
                 type: Type.STRING,
-                description: `Le service que le client souhaite commander. Doit être l'une des options suivantes : '${PortfolioCategory.VIDEO_UGC}', '${PortfolioCategory.VIDEO_SPOT_PUBLICITAIRE}', ou '${PortfolioCategory.STRATEGY}'.`,
+                description: `Le service que le client souhaite commander. Doit être l'une des options suivantes : '${PortfolioCategory.VIDEO_UGC}' ou '${PortfolioCategory.VIDEO_SPOT_PUBLICITAIRE}'.`,
             },
             details: {
                 type: Type.STRING,
@@ -214,6 +214,38 @@ const Chatbot: React.FC = () => {
         }
     }, [isOpen, API_KEY]);
 
+    const saveChatMessageToDb = async (sender: string, text: string) => {
+        if (!conversationId) return;
+        try {
+            const csrf = await fetchCsrfToken();
+            if (!csrf) return;
+
+            await fetch(GRAPHQL_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrf,
+                },
+                body: JSON.stringify({
+                    query: `
+                        mutation AddChatMessage($conversationId: ID!, $sender: String!, $text: String!) {
+                            addChatMessage(conversationId: $conversationId, sender: $sender, text: $text) {
+                                id
+                            }
+                        }
+                    `,
+                    variables: {
+                        conversationId,
+                        sender,
+                        text,
+                    },
+                }),
+            });
+        } catch (error) {
+            console.error('Failed to save message to DB:', error);
+        }
+    };
+
     const createConversation = async () => {
         try {
             const csrf = await fetchCsrfToken();
@@ -241,6 +273,25 @@ const Chatbot: React.FC = () => {
             if (result.data && result.data.createConversation) {
                 const conversation = result.data.createConversation;
                 setConversationId(conversation.id);
+
+                // SAVE INITIAL GREETING NOW THAT WE HAVE ID
+                const initialGreeting = API_KEY
+                    ? "Bonjour 😊 Je suis Naïla, l'assistante virtuelle de Netpub. Pour commencer, comment puis-je vous appeler ?"
+                    : "Désolé, le chatbot n'est pas entièrement configuré (clé API manquante). Je ne peux pas répondre pour le moment.";
+
+                // We need to wait for state to update or use the local id
+                const useId = conversation.id;
+                await fetch(GRAPHQL_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                    body: JSON.stringify({
+                        query: `mutation AddChatMessage($conversationId: ID!, $sender: String!, $text: String!) {
+                            addChatMessage(conversationId: $conversationId, sender: $sender, text: $text) { id }
+                        }`,
+                        variables: { conversationId: useId, sender: 'model', text: initialGreeting }
+                    }),
+                });
+
                 NotificationService.notifyNewConversation({
                     id: conversation.id,
                     userName: conversation.userName,
@@ -346,6 +397,26 @@ const Chatbot: React.FC = () => {
         setMessages(prev => [...prev, userMessage]);
         setInputValue('');
         setIsLoading(true);
+        saveChatMessageToDb('user', textToSend);
+
+        // Proactively capture name on first message
+        if (messages.length === 1 && conversationId) {
+            try {
+                const csrf = await fetchCsrfToken();
+                if (csrf) {
+                    fetch(GRAPHQL_ENDPOINT, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                        body: JSON.stringify({
+                            query: `mutation UpdateConversation($conversationId: String!, $clientName: String) {
+                                updateConversation(conversationId: $conversationId, clientName: $clientName) { id }
+                            }`,
+                            variables: { conversationId, clientName: textToSend }
+                        })
+                    });
+                }
+            } catch (e) { }
+        }
 
         const history = messages.map(msg => ({
             role: msg.role,
@@ -577,6 +648,7 @@ Ton but est de rendre chaque conversation unique et mémorable. Sois l'étincell
                     type: 'function_confirmation'
                 };
                 setMessages(prev => [...prev, functionMessage]);
+                saveChatMessageToDb('model', confirmationText);
                 // speakText(confirmationText);
             } else {
                 const modelText = response.text || "Désolé, je n'ai pas pu générer une réponse.";
@@ -587,6 +659,7 @@ Ton but est de rendre chaque conversation unique et mémorable. Sois l'étincell
                     type: 'text'
                 };
                 setMessages(prev => [...prev, modelMessage]);
+                saveChatMessageToDb('model', modelText);
                 // speakText(modelText);
             }
         } catch (error) {

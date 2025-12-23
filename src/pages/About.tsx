@@ -12,9 +12,9 @@ const About: React.FC = () => {
     const valuesRef = useRef<HTMLDivElement>(null);
     const methodRef = useRef<HTMLDivElement>(null);
 
-    const isIntroVisible = useOnScreen(introRef, { threshold: 0.2 });
-    const isValuesVisible = useOnScreen(valuesRef, { threshold: 0.2 });
-    const isMethodVisible = useOnScreen(methodRef, { threshold: 0.1 });
+    const isIntroVisible = useOnScreen(introRef as any, { threshold: 0.2 });
+    const isValuesVisible = useOnScreen(valuesRef as any, { threshold: 0.2 });
+    const isMethodVisible = useOnScreen(methodRef as any, { threshold: 0.1 });
 
     return (
         <div className="page-container new-about-page">

@@ -3,11 +3,12 @@
 generator client {
   provider = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
+  // engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
 }
 
 // Exemple de modèles pour votre application UGC

@@ -15,20 +15,41 @@ import helmet from 'helmet';
 import session from 'express-session';
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 
 // Logs et diagnostics
 console.log('🚀 Démarrage du serveur backend NetPub...');
 console.log(`📊 Environnement: ${process.env.NODE_ENV || 'development'}`);
 console.log(`🔌 Port: ${PORT}`);
 
+// Validate required environment variables
+if (!process.env.SESSION_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ ERROR: SESSION_SECRET environment variable is required in production');
+    console.error('Please set SESSION_SECRET in your .env file');
+    process.exit(1);
+  } else {
+    console.warn('⚠️  WARNING: SESSION_SECRET not set, using temporary secret for development');
+  }
+}
+
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ ERROR: JWT_SECRET environment variable is required in production');
+    console.error('Please set JWT_SECRET in your .env file');
+    process.exit(1);
+  } else {
+    console.warn('⚠️  WARNING: JWT_SECRET not set, using temporary secret for development');
+  }
+}
+
 // Middleware avec logs
 app.use(cors());
-app.use(helmet(SecurityUtils.getSecurityHeaders()));
+app.use(helmet(SecurityUtils.getSecurityHeaders() as any));
 
 // Configure session middleware
 app.use(session({
-  secret: process.env.SESSION_SECRET || SecurityUtils.generateSecureToken(32), // Use a strong secret
+  secret: process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' ? null : SecurityUtils.generateSecureToken(32)), // Use a strong secret
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -43,7 +64,7 @@ app.use((req, res, next) => {
 });
 
 // Make CSRF token available to the frontend
-import { csrfApolloMiddleware, csrfProtection } from './lib/csrfMiddleware.js';
+// import { csrfApolloMiddleware, csrfProtection } from './lib/csrfMiddleware.js';
 // ...
 app.get('/csrf-token', (req, res) => {
   res.json({ csrfToken: 'CSRF_DISABLED' }); // Return a dummy token since CSRF is disabled
@@ -133,9 +154,9 @@ async function startServer() {
     await prisma.$connect();
     console.log('✅ Connexion à la base de données établie');
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Serveur prêt à l'adresse http://localhost:${PORT}${server.graphqlPath}`);
-      console.log(`🏥 Endpoint de santé disponible sur http://localhost:${PORT}/health`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Serveur prêt à l'adresse http://0.0.0.0:${PORT}${server.graphqlPath}`);
+      console.log(`🏥 Endpoint de santé disponible sur http://0.0.0.0:${PORT}/health`);
     });
   } catch (error) {
     console.error('❌ Erreur lors du démarrage du serveur:', error);

@@ -51,7 +51,6 @@
 .item-footer {
   padding: 8px 15px 8px 15px;
   background-color: #1c1c1c;
-  border-top: 1px solid #333;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;

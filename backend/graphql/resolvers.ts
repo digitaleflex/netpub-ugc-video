@@ -1,7 +1,7 @@
-import { prisma } from '../lib/prisma';
-import { AuthService } from '../lib/auth';
-import { emailService } from '../lib/email';
-import { DashboardService } from '../lib/dashboard';
+import { prisma } from '../lib/prisma.js';
+import { AuthService } from '../lib/auth.js';
+import { emailService } from '../lib/email.js';
+import { DashboardService } from '../lib/dashboard.js';
 import createDOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 
@@ -189,10 +189,22 @@ export const resolvers = {
         const clientPhone = conversation?.clientPhone || '';
 
         // Create appointment in DB
+        // Parse the date string properly
+        let appointmentDate: Date;
+        try {
+          appointmentDate = new Date(date);
+          if (isNaN(appointmentDate.getTime())) {
+            throw new Error('Invalid date format');
+          }
+        } catch (error) {
+          console.error('Invalid date format provided:', date);
+          throw new Error('Invalid date format. Please provide a valid date.');
+        }
+
         const appointment = await prisma.appointment.create({
           data: {
             service,
-            date: new Date(), // Placeholder, should parse date string if possible or store as string
+            date: appointmentDate,
             time,
             clientName,
             status: 'pending',
@@ -522,7 +534,7 @@ export const resolvers = {
     deleteConversation: (_: any, { conversationId }: { conversationId: string }) => DashboardService.deleteConversation(conversationId),
 
     addNoteToConversation: (_: any, { conversationId, note }: { conversationId: string; note: string }) => DashboardService.addNoteToConversation(conversationId, note),
-
+    addChatMessage: (_: any, { conversationId, sender, text }: { conversationId: string; sender: string; text: string }) => DashboardService.saveChatMessage(conversationId, sender, text),
   },
 
 };

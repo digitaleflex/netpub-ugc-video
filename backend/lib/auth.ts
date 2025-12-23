@@ -1,11 +1,18 @@
-import { AuthUser } from '../../types';
+import { AuthUser } from './types.js';
 import bcrypt from 'bcryptjs';
-import * as jwt from 'jsonwebtoken';
-import { prisma } from './prisma';
-import { SecurityUtils } from './security';
+import jwt from 'jsonwebtoken';
+import { prisma } from './prisma.js';
+import { SecurityUtils } from './security.js';
 
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Validate that required environment variables are present
+if (!JWT_SECRET) {
+  console.error('❌ ERROR: JWT_SECRET environment variable is required');
+  console.error('Please set JWT_SECRET in your .env file');
+  process.exit(1);
+}
 
 export class AuthService {
   private static failedAttempts: Map<string, { count: number; lastAttempt: number; blockedUntil: number }> = new Map();
@@ -25,14 +32,14 @@ export class AuthService {
         email: user.email,
         role: user.role
       },
-      JWT_SECRET,
+      JWT_SECRET as string,
       { expiresIn: '7d' }
     );
   }
 
   static verifyToken(token: string): AuthUser | null {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, JWT_SECRET as string) as any;
       return {
         id: decoded.userId,
         email: decoded.email,
@@ -137,6 +144,25 @@ export class AuthService {
 
   static async registerUser(email: string, password: string, name?: string): Promise<AuthUser | null> {
     try {
+      // Validate input
+      if (!email || !password) {
+        console.error('❌ Missing required fields for registration:', { email: !!email, password: !!password });
+        return null;
+      }
+
+      // Validate email format
+      const emailRegex = /^[\w._%+-]+@[\w.-]+\.[A-Za-z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        console.error('❌ Invalid email format for registration:', email);
+        return null;
+      }
+
+      // Validate password strength
+      if (password.length < 8) {
+        console.error('❌ Password too short for registration:', password.length);
+        return null;
+      }
+
       const hashedPassword = await this.hashPassword(password);
 
       const user = await prisma.user.create({
@@ -148,14 +174,20 @@ export class AuthService {
         }
       });
 
+      console.log(`✅ User registered successfully: ${email}`);
       return {
         id: user.id,
         email: user.email,
         name: user.name || null,
         role: user.role
       };
-    } catch (error) {
+    } catch (error: any) {
       // Handle unique constraint violation
+      if (error.code === 'P2002') { // Prisma unique constraint violation
+        console.error('❌ User registration failed - email already exists:', email);
+      } else {
+        console.error('❌ User registration failed:', error.message);
+      }
       return null;
     }
   }

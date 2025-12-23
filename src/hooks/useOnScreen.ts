@@ -1,7 +1,7 @@
 import { useState, useEffect, RefObject } from 'react';
 
-const useOnScreen = (
-  ref: RefObject<HTMLElement>,
+const useOnScreen = <T extends Element>(
+  ref: RefObject<T>,
   options: IntersectionObserverInit = { rootMargin: '0px', threshold: 0.1 }
 ): boolean => {
   const [isVisible, setIsVisible] = useState(false);
@@ -26,7 +26,7 @@ const useOnScreen = (
         observer.unobserve(currentElement);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref, options.rootMargin, options.threshold]); // S'assurer que l'effet se relance si les options changent
 
   return isVisible;

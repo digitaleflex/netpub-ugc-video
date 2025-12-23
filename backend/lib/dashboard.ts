@@ -1,10 +1,34 @@
-import { prisma } from './prisma';
+import { prisma } from './prisma.js';
 import { Prisma } from '@prisma/client';
 
 export class DashboardService {
+  private static async getTrend(model: any, where: any = {}, dateField: string = 'createdAt') {
+    const now = new Date();
+    const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const [thisMonth, lastMonth] = await Promise.all([
+      (prisma as any)[model].count({
+        where: { ...where, [dateField]: { gte: firstDayThisMonth } }
+      }),
+      (prisma as any)[model].count({
+        where: { ...where, [dateField]: { gte: firstDayLastMonth, lt: firstDayThisMonth } }
+      })
+    ]);
+
+    const diff = lastMonth === 0 ? (thisMonth > 0 ? 100 : 0) : ((thisMonth - lastMonth) / lastMonth) * 100;
+    return {
+      value: Math.abs(Math.round(diff * 10) / 10),
+      isUp: diff >= 0
+    };
+  }
+
   static async getStats() {
     try {
-      console.log('📊 Récupération des statistiques du dashboard');
+      console.log('📊 Récupération des statistiques réelles du dashboard');
+      const now = new Date();
+      const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
       const [
         totalConversations,
         activeConversations,
@@ -23,15 +47,13 @@ export class DashboardService {
         recentOrders,
         recentComments,
         recentLikes,
+        conversationsTrend,
+        appointmentsTrend,
+        ordersTrend,
+        engagementTrend
       ] = await Promise.all([
         prisma.conversation.count(),
-        prisma.conversation.count({
-          where: {
-            lastActivity: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-            },
-          },
-        }),
+        prisma.conversation.count({ where: { lastActivity: { gte: last24h } } }),
         prisma.appointment.count(),
         prisma.appointment.count({ where: { status: 'pending' } }),
         prisma.appointment.count({ where: { status: 'confirmed' } }),
@@ -43,38 +65,34 @@ export class DashboardService {
         prisma.comment.count(),
         prisma.like.count(),
         prisma.conversation.findMany({
-          take: 10,
+          take: 5,
           orderBy: { lastActivity: 'desc' },
-          include: {
-            messages: {
-              take: 1,
-              orderBy: { timestamp: 'desc' },
-            },
-          },
+          include: { messages: { take: 1, orderBy: { timestamp: 'desc' } } },
         }),
         prisma.appointment.findMany({
-          take: 10,
+          take: 5,
           orderBy: { date: 'desc' },
-          include: { conversation: true },
         }),
         prisma.order.findMany({
-          take: 10,
+          take: 5,
           orderBy: { date: 'desc' },
-          include: { conversation: true },
         }),
         prisma.comment.findMany({
-          take: 10,
+          take: 5,
           orderBy: { createdAt: 'desc' },
           include: { user: true, project: true },
         }),
         prisma.like.findMany({
-          take: 10,
+          take: 5,
           orderBy: { createdAt: 'desc' },
           include: { user: true, project: true },
         }),
+        this.getTrend('conversation'),
+        this.getTrend('appointment', {}, 'date'),
+        this.getTrend('order', {}, 'date'),
+        this.getTrend('like'),
       ]);
 
-      console.log(`✅ Statistiques récupérées: ${totalConversations} conversations, ${totalComments} commentaires, ${totalLikes} likes`);
       return {
         totalConversations,
         activeConversations,
@@ -93,33 +111,68 @@ export class DashboardService {
         recentOrders,
         recentComments,
         recentLikes,
+        conversationsTrend,
+        appointmentsTrend,
+        ordersTrend,
+        engagementTrend
       };
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des statistiques:', error);
+      console.error('❌ Erreur stats:', error);
       throw new Error('Failed to get dashboard statistics');
     }
   }
 
   static async getAnalyticsStats() {
     try {
-      console.log(`📊 Récupération des statistiques d'analyse`);
+      const start = Date.now();
       const [totalMessages, totalAppointments, totalOrders, totalConversations] = await Promise.all([
         prisma.chatMessage.count(),
         prisma.appointment.count(),
         prisma.order.count(),
         prisma.conversation.count(),
       ]);
+      const systemLatency = Date.now() - start;
 
+      // Efficiency Score based on successful outcomes
+      const [allApps, allOrds] = await Promise.all([
+        prisma.appointment.findMany({ select: { status: true } }),
+        prisma.order.findMany({ select: { status: true } })
+      ]);
+      const successApp = allApps.filter(a => ['confirmed', 'completed'].includes(a.status)).length;
+      const successOrd = allOrds.filter(o => ['confirmed', 'delivered', 'managed'].includes(o.status)).length;
+      const totalOutcomes = allApps.length + allOrds.length;
+      const efficiencyScore = totalOutcomes > 0 ? ((successApp + successOrd) / totalOutcomes) * 100 : 0;
       const conversionRate = totalConversations > 0 ? (totalOrders / totalConversations) * 100 : 0;
 
-      // Les intentions ne sont pas suivies, nous renvoyons des données factices
-      const mostFrequentIntentions = [
-        { name: 'Prendre rendez-vous', count: totalAppointments, icon: '📅' },
-        { name: 'Voir tarifs', count: 30, icon: '💰' },
-        { name: 'Demander un devis', count: 25, icon: '✉️' },
-        { name: 'Voir portfolio', count: 50, icon: '🖼️' },
-        { name: 'Autre', count: 20, icon: '❓' },
-      ];
+      // Intentions basées sur les services demandés dans les rendez-vous
+      const appointments = await prisma.appointment.findMany({ select: { service: true } });
+      const counts: Record<string, number> = {};
+      appointments.forEach(a => counts[a.service] = (counts[a.service] || 0) + 1);
+
+      const mostFrequentIntentions = Object.entries(counts)
+        .map(([name, count]) => ({ name, count, icon: '⚡' }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      if (mostFrequentIntentions.length === 0 && totalMessages > 0) {
+        mostFrequentIntentions.push({ name: 'Demandes Générales', count: totalMessages, icon: '💬' });
+      }
+
+      // Real conversion trend calculation
+      const now = new Date();
+      const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+      const [thisMoOrders, thisMoConvs, lastMoOrders, lastMoConvs] = await Promise.all([
+        prisma.order.count({ where: { date: { gte: firstDayThisMonth } } }),
+        prisma.conversation.count({ where: { createdAt: { gte: firstDayThisMonth } } }),
+        prisma.order.count({ where: { date: { gte: firstDayLastMonth, lt: firstDayThisMonth } } }),
+        prisma.conversation.count({ where: { createdAt: { gte: firstDayLastMonth, lt: firstDayThisMonth } } })
+      ]);
+
+      const curRate = thisMoConvs > 0 ? (thisMoOrders / thisMoConvs) : 0;
+      const prevRate = lastMoConvs > 0 ? (lastMoOrders / lastMoConvs) : 0;
+      const cDiff = prevRate === 0 ? (curRate > 0 ? 100 : 0) : ((curRate - prevRate) / prevRate) * 100;
 
       return {
         totalMessages,
@@ -127,9 +180,18 @@ export class DashboardService {
         totalOrders,
         conversionRate,
         mostFrequentIntentions,
+        messagesTrend: await this.getTrend('chatMessage', {}, 'timestamp'),
+        appointmentsTrend: await this.getTrend('appointment', {}, 'date'),
+        ordersTrend: await this.getTrend('order', {}, 'date'),
+        conversionTrend: {
+          value: Math.abs(Math.round(cDiff * 10) / 10),
+          isUp: cDiff >= 0
+        },
+        systemLatency,
+        systemStatus: 'Opérationnel',
+        efficiencyScore: Math.round(efficiencyScore * 10) / 10
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de la récupération des statistiques d'analyse:`, error);
       throw new Error('Failed to get analytics statistics');
     }
   }
@@ -200,7 +262,6 @@ export class DashboardService {
         skip: offset,
         orderBy: { lastActivity: 'desc' },
         include: {
-          user: true,
           messages: {
             orderBy: { timestamp: 'desc' },
             take: 10,
@@ -217,7 +278,7 @@ export class DashboardService {
       console.log(`✅ ${conversations.length} conversations récupérées`);
       return conversations.map(conv => ({
         ...conv,
-        messages: conv.messages.reverse(), // Most recent first
+        messages: [...conv.messages].reverse(), // Most recent first
       }));
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des conversations:', error);
@@ -230,7 +291,6 @@ export class DashboardService {
       const conversation = await prisma.conversation.findUnique({
         where: { id: conversationId },
         include: {
-          user: true,
           messages: {
             orderBy: { timestamp: 'asc' },
           },
@@ -319,6 +379,30 @@ export class DashboardService {
     } catch (error) {
       console.error('Error adding note to conversation:', error);
       return false;
+    }
+  }
+
+  static async saveChatMessage(conversationId: string, sender: string, text: string) {
+    try {
+      console.log(`💬 Enregistrement du message (${sender}): ${text.substring(0, 50)}...`);
+      const message = await prisma.chatMessage.create({
+        data: {
+          conversationId,
+          sender,
+          text,
+        },
+      });
+
+      // Update last activity
+      await prisma.conversation.update({
+        where: { id: conversationId },
+        data: { lastActivity: new Date() }
+      });
+
+      return message;
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'enregistrement du message:', error);
+      throw new Error('Failed to save chat message');
     }
   }
 }

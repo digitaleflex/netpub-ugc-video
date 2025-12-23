@@ -1,14 +1,31 @@
-// @ts-nocheck
-import { useEffect, useId, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useRef } from 'react';
 
 import './ElectricBorder.css';
 
-const ElectricBorder = ({ children, color = '#5227FF', speed = 1, chaos = 1, thickness = 2, className, style }) => {
+interface ElectricBorderProps {
+  children: React.ReactNode;
+  color?: string;
+  speed?: number;
+  chaos?: number;
+  thickness?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+const ElectricBorder: React.FC<ElectricBorderProps> = ({
+  children,
+  color = '#111111',
+  speed = 1,
+  chaos = 1,
+  thickness = 2,
+  className,
+  style
+}) => {
   const rawId = useId().replace(/:/g, '');
   const filterId = `turbulent-displace-${rawId}`;
-  const svgRef = useRef(null);
-  const rootRef = useRef(null);
-  const strokeRef = useRef(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const strokeRef = useRef<HTMLDivElement>(null);
 
   const updateAnim = () => {
     const svg = svgRef.current;
@@ -19,16 +36,17 @@ const ElectricBorder = ({ children, color = '#5227FF', speed = 1, chaos = 1, thi
       strokeRef.current.style.filter = `url(#${filterId})`;
     }
 
-    const width = Math.max(1, Math.round(host.clientWidth || host.getBoundingClientRect().width || 0));
-    const height = Math.max(1, Math.round(host.clientHeight || host.getBoundingClientRect().height || 0));
+    const rect = host.getBoundingClientRect();
+    const width = Math.max(1, Math.round(host.clientWidth || rect.width || 0));
+    const height = Math.max(1, Math.round(host.clientHeight || rect.height || 0));
 
-    const dyAnims = Array.from(svg.querySelectorAll('feOffset > animate[attributeName="dy"]'));
+    const dyAnims = Array.from(svg.querySelectorAll('feOffset > animate[attributeName="dy"]')) as SVGAnimateElement[];
     if (dyAnims.length >= 2) {
       dyAnims[0].setAttribute('values', `${height}; 0`);
       dyAnims[1].setAttribute('values', `0; -${height}`);
     }
 
-    const dxAnims = Array.from(svg.querySelectorAll('feOffset > animate[attributeName="dx"]'));
+    const dxAnims = Array.from(svg.querySelectorAll('feOffset > animate[attributeName="dx"]')) as SVGAnimateElement[];
     if (dxAnims.length >= 2) {
       dxAnims[0].setAttribute('values', `${width}; 0`);
       dxAnims[1].setAttribute('values', `0; -${width}`);
@@ -38,10 +56,10 @@ const ElectricBorder = ({ children, color = '#5227FF', speed = 1, chaos = 1, thi
     const dur = Math.max(0.001, baseDur / (speed || 1));
     [...dyAnims, ...dxAnims].forEach(a => a.setAttribute('dur', `${dur}s`));
 
-    const disp = svg.querySelector('feDisplacementMap');
+    const disp = svg.querySelector('feDisplacementMap') as SVGElement;
     if (disp) disp.setAttribute('scale', String(30 * (chaos || 1)));
 
-    const filterEl = svg.querySelector(`#${CSS.escape(filterId)}`);
+    const filterEl = svg.querySelector(`#${CSS.escape(filterId)}`) as SVGElement;
     if (filterEl) {
       filterEl.setAttribute('x', '-200%');
       filterEl.setAttribute('y', '-200%');
@@ -51,9 +69,9 @@ const ElectricBorder = ({ children, color = '#5227FF', speed = 1, chaos = 1, thi
 
     requestAnimationFrame(() => {
       [...dyAnims, ...dxAnims].forEach(a => {
-        if (typeof a.beginElement === 'function') {
+        if (typeof (a as any).beginElement === 'function') {
           try {
-            a.beginElement();
+            (a as any).beginElement();
           } catch {
             console.warn('ElectricBorder: beginElement failed, this may be due to a browser limitation.');
           }

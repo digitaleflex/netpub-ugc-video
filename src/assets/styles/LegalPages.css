@@ -3,7 +3,7 @@
 :root{
   --card-bg: #ffffff; /* carte blanche */
   --card-border: rgba(2,6,23,0.06);
-  --accent: #0b69ff; /* bleu principal pour titres */
+  --accent: #111111; /* Changed from blue to dark neutral/black */
   --muted: #6b7280; /* gris secondaire */
   --text-dark: #111111; /* texte principal très sombre */
   --text-mid: #333333; /* texte secondaire */
@@ -74,7 +74,7 @@
 }
 
 .page-container.legal-page a{color:var(--accent);text-decoration:underline}
-.page-container.legal-page a:hover{color:#0a58d8}
+.page-container.legal-page a:hover{color:#111111}
 
 @media (max-width:800px){
   .page-container.legal-page .article-header h1{font-size:22px}

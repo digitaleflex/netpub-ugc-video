@@ -1,0 +1,215 @@
+.influencer-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+  background: #f0f4f8;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.influencer-card:hover {
+  transform: translateY(-5px) scale(1.01);
+}
+
+.influencer-main-photo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.6s ease;
+}
+
+/* Fog/Brouillard Effect - White to transparent to blue pastel as requested */
+.influencer-fog-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0) 45%, 
+    rgba(255, 255, 255, 0.4) 60%, 
+    rgba(235, 245, 255, 0.7) 80%,
+    rgba(215, 230, 245, 0.9) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Corner Labels */
+.card-label {
+  position: absolute;
+  z-index: 10;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 1);
+  padding: 20px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.top-right { top: 0; right: 0; }
+
+.influencer-content-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 32px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  color: #fff;
+}
+
+/* 3-Circle Carousel positioned very low */
+.influencer-carousel-nav {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.carousel-circle {
+  width: 42px; /* Reduced from 54px to avoid hiding faces */
+  height: 42px; /* Reduced from 54px */
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.85;
+  position: relative;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.carousel-circle img, 
+.carousel-circle video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carousel-circle.active {
+  opacity: 1;
+  transform: scale(1.4) translateY(10px);
+  border-color: #fff;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+}
+
+.circle-label {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #1A2B3C;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Carousel dots indicator - Sit right below the circles */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  z-index: 6;
+}
+
+.carousel-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.carousel-dot.active {
+  background: #fff;
+  width: 18px;
+  border-radius: 3px;
+}
+
+/* Bottom Information Section */
+.influencer-bottom-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.influencer-name-age {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.influencer-badges-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.glass-badge {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.influencer-bio-row {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  max-width: 100%;
+}
+
+/* Continue Button - Glassmorphic */
+.influencer-action-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.influencer-continue-btn {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  padding: 14px 44px;
+  border-radius: 32px;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.influencer-continue-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}

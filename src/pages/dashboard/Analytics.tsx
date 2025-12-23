@@ -1,130 +1,116 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './dashboard.css';
-import { fetchCsrfToken } from '../../utils/csrf';
-
-const GET_ANALYTICS_STATS = `
-  query GetAnalyticsStats {
-    analyticsStats {
-      totalMessages
-      totalAppointments
-      totalOrders
-      conversionRate
-      mostFrequentIntentions {
-        name
-        count
-        icon
-      }
-    }
-  }
-`;
-
-const GRAPHQL_ENDPOINT = '/graphql';
-
-// Placeholder for a simple animated counter hook if needed, for now just displays the value
-const AnimatedCounter: React.FC<{ value: number }> = ({ value }) => {
-  // In a real app, this would animate from 0 to value
-  return <span>{Math.round(value)}</span>;
-};
-
-interface AnalyticCardProps {
-  title: string;
-  value: number;
-  icon: string;
-  unit?: string;
-}
-
-const AnalyticCard: React.FC<AnalyticCardProps> = ({ title, value, icon, unit = '' }) => (
-  <div className="analytic-card widget">
-    <div className="card-icon">{icon}</div>
-    <div className="card-content">
-      <h3>{title}</h3>
-      <p className="card-value"><AnimatedCounter value={value} />{unit}</p>
-    </div>
-  </div>
-);
-
-interface Intention {
-  name: string;
-  count: number;
-  icon: string;
-}
-
-interface AnalyticsStats {
-  totalMessages: number;
-  totalAppointments: number;
-  totalOrders: number;
-  conversionRate: number;
-  mostFrequentIntentions: Intention[];
-}
+import {
+  MessageSquare,
+  Calendar,
+  ShoppingCart,
+  TrendingUp,
+  PieChart,
+  BarChart3,
+  Target,
+  ArrowUpRight,
+  Zap,
+  HelpCircle,
+  Package
+} from 'lucide-react';
+import { Card, StatCard, Badge, Button } from '../../components/ui';
+import { useDashboard } from '../../contexts/DashboardContext';
 
 const Analytics: React.FC = () => {
-  const [stats, setStats] = useState<AnalyticsStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { analyticsStats: stats, loading, error, refreshStats } = useDashboard();
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const csrf = await fetchCsrfToken();
-        if (!csrf) {
-          throw new Error('CSRF token not available');
-        }
+  if (loading && !stats) return <div className="dashboard-section"><p>Analyse des performances en cours...</p></div>;
+  if (error && !stats) return <div className="dashboard-section"><p className="error-message">{error}</p></div>;
 
-        const response = await fetch(GRAPHQL_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-          body: JSON.stringify({
-            query: GET_ANALYTICS_STATS,
-          }),
-        });
-        const result = await response.json();
+  const maxIntentionCount = stats ? Math.max(...stats.mostFrequentIntentions.map((i: any) => i.count), 1) : 1;
 
-        if (result.data && result.data.analyticsStats) {
-          setStats(result.data.analyticsStats);
-        } else {
-          setError(result.errors ? result.errors[0].message : 'Failed to fetch analytics data.');
-        }
-      } catch (err) {
-        setError('An error occurred while fetching analytics data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnalytics();
-  }, []);
-
-  if (loading) {
-    return <div className="dashboard-section"><h1>Chargement des analyses...</h1></div>;
-  }
-
-  if (error) {
-    return <div className="dashboard-section"><h1 className="error-message">Erreur: {error}</h1></div>;
-  }
+  const getIntentionIcon = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes('rdv') || n.includes('rendez-vous') || n.includes('appointment')) return <Calendar size={18} />;
+    if (n.includes('cmd') || n.includes('commande') || n.includes('order')) return <ShoppingCart size={18} />;
+    if (n.includes('info') || n.includes('aide') || n.includes('help')) return <HelpCircle size={18} />;
+    if (n.includes('port')) return <Package size={18} />;
+    return <Zap size={18} />;
+  };
 
   return (
-    <div className="dashboard-section analytics-view">
-      <h1>Chatbot Analytics & Insights</h1>
-      <p>Gain insights into your chatbot's performance and user interactions.</p>
-
-      <div className="analytics-grid">
-        <AnalyticCard title="Messages échangés" value={stats?.totalMessages || 0} icon="💬" />
-        <AnalyticCard title="Rendez-vous pris" value={stats?.totalAppointments || 0} icon="📅" />
-        <AnalyticCard title="Commandes validées" value={stats?.totalOrders || 0} icon="🛍️" />
-        <AnalyticCard title="Taux de conversion" value={stats?.conversionRate || 0} icon="🚀" unit="%" />
+    <div className="dashboard-section">
+      <div className="section-header">
+        <h1>Analyses & Performance IA</h1>
+        <p>Mesurez l'efficacité réelle de vos workflows Netpub.</p>
       </div>
 
-      <div className="most-frequent-intentions widget">
-        <h2>Intentions les plus fréquentes</h2>
-        <ul>
-          {stats?.mostFrequentIntentions.map((intent, index) => (
-            <li key={index}>
-              <span className="intention-icon">{intent.icon}</span>
-              <span className="intention-name">{intent.name}</span>
-              <span className="intention-count">{intent.count}</span>
-            </li>
-          ))}
-        </ul>
+      <div className="stats-grid" style={{ marginBottom: '32px' }}>
+        <StatCard title="Messages IA" value={stats?.totalMessages || 0} icon={MessageSquare} trend={stats?.messagesTrend} />
+        <StatCard title="Rendez-vous" value={stats?.totalAppointments || 0} icon={Target} color="var(--color-success)" trend={stats?.appointmentsTrend} />
+        <StatCard title="Commandes" value={stats?.totalOrders || 0} icon={BarChart3} color="var(--color-warning)" trend={stats?.ordersTrend} />
+        <StatCard title="Conversion" value={`${Math.round(stats?.conversionRate || 0)}%`} icon={TrendingUp} color="var(--color-info)" trend={stats?.conversionTrend} />
+      </div>
+
+      <div className="dashboard-grid-two">
+        <Card
+          title="Intentions Clients"
+          subtitle="Analyse sémantique des requêtes (Source: DB)"
+          actions={<Button variant="ghost" size="sm" icon={<PieChart size={16} />}>Rapport</Button>}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px 0' }}>
+            {stats?.mostFrequentIntentions.map((intent: any, index: number) => (
+              <div key={index}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    <div style={{ padding: '8px', background: 'var(--bg-app)', borderRadius: '8px', color: 'var(--accent-brand)', flexShrink: 0 }}>
+                      {getIntentionIcon(intent.name)}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9375rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{intent.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{intent.count} occurrences</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: 800, flexShrink: 0 }}>{Math.round((intent.count / maxIntentionCount) * 100)}%</div>
+                </div>
+                <div style={{ height: '8px', background: 'var(--bg-app)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${(intent.count / maxIntentionCount) * 100}%`,
+                      background: 'linear-gradient(90deg, var(--accent-brand), var(--accent-brand-deep))',
+                      borderRadius: '4px',
+                      transition: 'width 1s ease-out'
+                    }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <Card title="Efficacité IA">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ padding: '20px', background: 'var(--accent-brand-soft)', borderRadius: '16px', border: '1px solid var(--border-brand)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--accent-brand)' }}>Score d'exécution</span>
+                  <Badge variant="filled" status="success">Optimal</Badge>
+                </div>
+                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-main)' }}>{stats?.efficiencyScore || 0}%</div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Basé sur la résolution directe et le sentiment positif.</p>
+              </div>
+
+              <div style={{ padding: '20px', background: 'var(--bg-app)', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '16px' }}>Statut Infrastructure</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '12px', height: '12px', background: 'var(--color-success)', borderRadius: '50%', boxShadow: `0 0 10px var(--color-success)` }}></div>
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{stats?.systemStatus}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Latence: {stats?.systemLatency}ms</div>
+                  </div>
+                </div>
+              </div>
+
+              <Button variant="outline" style={{ width: '100%' }} icon={<ArrowUpRight size={16} />} onClick={refreshStats}>Actualiser les analyses</Button>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );

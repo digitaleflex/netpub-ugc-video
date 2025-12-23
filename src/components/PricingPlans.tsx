@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useScreenWidth from '../hooks/useScreenWidth';
+import { Sprout, Award, Crown, Clapperboard, TrendingUp, Sparkles } from 'lucide-react';
 
 const PricingPlans: React.FC = () => {
   const screenWidth = useScreenWidth();
@@ -17,7 +18,8 @@ const PricingPlans: React.FC = () => {
   const plans = [
     {
       id: 'elan',
-      name: '🌱 Plan ÉLAN',
+      name: 'Plan ÉLAN',
+      icon: <Sprout size={24} className="plan-icon" />,
       tagline: 'Pour poser les bases de votre image',
       badge: { text: 'Débuter fort', color: 'elan' },
       features: {
@@ -39,7 +41,8 @@ const PricingPlans: React.FC = () => {
     },
     {
       id: 'marque',
-      name: '🎖️ Plan MARQUE',
+      name: 'Plan MARQUE',
+      icon: <Award size={24} className="plan-icon" />,
       tagline: 'Pour développer votre notoriété',
       badge: { text: 'Croissance & expansion', color: 'marque' },
       popular: true,
@@ -63,8 +66,9 @@ const PricingPlans: React.FC = () => {
     },
     {
       id: 'entreprise',
-      name: '👑 Plan ENTREPRISE',
-      tagline: 'Pour s\'imposer durablement',
+      name: 'Plan ENTREPRISE',
+      icon: <Crown size={24} className="plan-icon" />,
+      tagline: 'Pour s\'imposerdurablement',
       badge: { text: 'Luxe & performance', color: 'entreprise' },
       features: {
         content: [
@@ -93,9 +97,9 @@ const PricingPlans: React.FC = () => {
       chatbotButton.click();
       setTimeout(() => {
         const event = new CustomEvent('chatbotContext', {
-          detail: { 
-            plan: planName, 
-            message: `Je suis intéressé par le ${planName}` 
+          detail: {
+            plan: planName,
+            message: `Je suis intéressé par le ${planName}`
           }
         });
         window.dispatchEvent(event);
@@ -108,7 +112,7 @@ const PricingPlans: React.FC = () => {
       <div className={`pricing-badge ${plan.badge.color}-badge`}>
         <span>{plan.badge.text}</span>
       </div>
-      
+
       {isPopular && (
         <div className="popular-badge">
           <span>Populaire</span>
@@ -116,12 +120,15 @@ const PricingPlans: React.FC = () => {
       )}
 
       <div className="pricing-card-content">
-        <h3>{plan.name}</h3>
+        <div className="plan-header-row">
+          {plan.icon}
+          <h3>{plan.name}</h3>
+        </div>
         <p className="plan-tagline">{plan.tagline}</p>
 
         <div className="pricing-features">
           <div className="feature-group">
-            <h4>🎬 Contenu :</h4>
+            <h4><Clapperboard size={18} /> Contenu :</h4>
             <ul>
               {plan.features.content.map((feature: string, index: number) => (
                 <li key={index}>{feature}</li>
@@ -130,7 +137,7 @@ const PricingPlans: React.FC = () => {
           </div>
 
           <div className="feature-group">
-            <h4>📈 Stratégie & analyse :</h4>
+            <h4><TrendingUp size={18} /> Stratégie & analyse :</h4>
             <ul>
               {plan.features.strategy.map((feature: string, index: number) => (
                 <li key={index}>{feature}</li>
@@ -139,12 +146,12 @@ const PricingPlans: React.FC = () => {
           </div>
 
           <div className="pricing-advantage">
-            <p><strong>✨ Avantage clé :</strong> {plan.advantage}</p>
+            <p><strong><Sparkles size={16} /> Avantage clé :</strong> {plan.advantage}</p>
             <p><strong>Idéal pour :</strong> {plan.idealFor}</p>
           </div>
         </div>
 
-        <button 
+        <button
           className="pricing-cta-button"
           onClick={() => openChatbot(plan.name)}
         >
@@ -168,9 +175,9 @@ const PricingPlans: React.FC = () => {
           // Desktop: Grid statique
           <div className="pricing-plans-grid">
             {plans.map((plan, index) => (
-              <PricingCard 
-                key={plan.id} 
-                plan={plan} 
+              <PricingCard
+                key={plan.id}
+                plan={plan}
                 isPopular={plan.popular}
               />
             ))}
@@ -179,17 +186,17 @@ const PricingPlans: React.FC = () => {
           // Mobile: Carousel fonctionnel
           <div className="pricing-plans-mobile-carousel">
             <div className="carousel-wrapper">
-              <div 
+              <div
                 className="pricing-cards-track"
-                style={{ 
+                style={{
                   transform: `translateX(-${currentIndex * 100}%)`,
                   transition: 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
                 }}
               >
                 {plans.map((plan, index) => (
                   <div key={plan.id} className="carousel-slide">
-                    <PricingCard 
-                      plan={plan} 
+                    <PricingCard
+                      plan={plan}
                       isPopular={plan.popular}
                     />
                   </div>
@@ -199,16 +206,16 @@ const PricingPlans: React.FC = () => {
 
             {/* Navigation buttons for mobile carousel */}
             <div className="carousel-navigation">
-              <button 
-                className="carousel-nav-btn prev" 
+              <button
+                className="carousel-nav-btn prev"
                 onClick={prevSlide}
                 aria-label="Plan précédent"
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-              
+
               <div className="carousel-indicators">
                 {plans.map((_, index) => (
                   <button
@@ -219,14 +226,14 @@ const PricingPlans: React.FC = () => {
                   />
                 ))}
               </div>
-              
-              <button 
-                className="carousel-nav-btn next" 
+
+              <button
+                className="carousel-nav-btn next"
                 onClick={nextSlide}
                 aria-label="Plan suivant"
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
             </div>

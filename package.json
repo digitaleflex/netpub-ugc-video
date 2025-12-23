@@ -5,16 +5,21 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev:frontend": "vite",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:all": "npm run dev",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "tsx backend/server.ts",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
+    "server": "npm run dev:backend",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx backend/prisma/seed.ts"
+    "db:seed": "tsx backend/prisma/seed.ts",
+    "test": "jest --config=jest.config.cjs",
+    "test:watch": "jest --watch --config=jest.config.cjs",
+    "test:coverage": "jest --coverage --config=jest.config.cjs"
   },
   "prisma": {
     "seed": "tsx backend/prisma/seed.ts"
@@ -58,9 +63,12 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.18.12",
     "@vitejs/plugin-react": "^5.1.0",
     "concurrently": "^9.2.1",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
     "tsx": "^4.20.6",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"

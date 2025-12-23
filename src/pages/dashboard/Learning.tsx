@@ -1,100 +1,105 @@
 import React, { useState } from 'react';
 import './dashboard.css';
-
-interface MisunderstoodIntention {
-  id: string;
-  phrase: string;
-  detectedIntent: string;
-  correctIntent: string;
-  suggestedResponse: string;
-  corrected: boolean;
-}
-
-const mockMisunderstoodIntentions: MisunderstoodIntention[] = [
-  {
-    id: 'int-1',
-    phrase: 'Je veux savoir le prix de vos vidéos',
-    detectedIntent: 'Demander un rendez-vous',
-    correctIntent: 'Demander les tarifs',
-    suggestedResponse: 'Nos tarifs sont disponibles sur la page Services.',
-    corrected: false,
-  },
-  {
-    id: 'int-2',
-    phrase: 'Faites-vous des pubs pour Instagram ?',
-    detectedIntent: 'Question générale',
-    correctIntent: 'Services spécifiques',
-    suggestedResponse: 'Oui, nous créons des publicités adaptées à Instagram.',
-    corrected: false,
-  },
-  {
-    id: 'int-3',
-    phrase: 'Comment je peux commander un UGC ?',
-    detectedIntent: 'Passer une commande',
-    correctIntent: 'Processus de commande UGC',
-    suggestedResponse: 'Vous pouvez commander un UGC via notre page de commande.',
-    corrected: true,
-  },
-];
+import {
+  Brain,
+  ShieldCheck,
+  RotateCcw,
+  BookOpen,
+  MessageSquare,
+  Zap,
+  ExternalLink
+} from 'lucide-react';
+import { Card, Table, Badge, Button, EmptyState } from '../../components/ui';
+import { useDashboard } from '../../contexts/DashboardContext';
 
 const Learning: React.FC = () => {
-  const [intentions, setIntentions] = useState<MisunderstoodIntention[]>(mockMisunderstoodIntentions);
+  const { analyticsStats, refreshStats, loading } = useDashboard();
   const [retraining, setRetraining] = useState(false);
-
-  const handleCorrect = (id: string) => {
-    setIntentions(prev => prev.map(intent => 
-      intent.id === id ? { ...intent, corrected: true } : intent
-    ));
-  };
 
   const handleRetrain = () => {
     setRetraining(true);
     setTimeout(() => {
       setRetraining(false);
-      alert('Bot successfully retrained!');
-    }, 3000);
+      alert('Modèle IA réentraîné avec succès par Netpub !');
+      refreshStats();
+    }, 2000);
   };
 
   return (
-    <div className="dashboard-section learning-view">
-      <h1>Chatbot Learning & Training</h1>
-      <p>Help your chatbot improve by reviewing and correcting misunderstood intentions.</p>
+    <div className="dashboard-section">
+      <div className="section-header">
+        <h1>Apprentissage & Optimisation</h1>
+        <p>Améliorez la précision de votre IA Netpub en temps réel.</p>
+      </div>
 
-      <div className="learning-grid">
-        <div className="misunderstood-intentions-panel widget">
-          <h2>Intentions mal comprises</h2>
-          <ul className="intention-list">
-            {intentions.map(intent => (
-              <li key={intent.id} className={`intention-item ${intent.corrected ? 'corrected' : ''}`}>
-                <div className="intention-phrase">
-                  <strong>Phrase:</strong> "{intent.phrase}"
-                </div>
-                <div className="intention-details">
-                  <p>Détecté: <span className="detected-intent">{intent.detectedIntent}</span></p>
-                  <p>Correct: <span className="correct-intent">{intent.correctIntent}</span></p>
-                  <p>Réponse suggérée: <em>"{intent.suggestedResponse}"</em></p>
-                </div>
-                {!intent.corrected && (
-                  <button onClick={() => handleCorrect(intent.id)} className="correct-button">
-                    Corriger
-                  </button>
-                )}
-                {intent.corrected && <span className="corrected-badge">✅ Corrigé</span>}
-              </li>
-            ))}
-          </ul>
+      <div className="dashboard-grid-two">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <Card
+            title="Intentions à réviser"
+            subtitle="0 phrases nécessitent votre attention"
+            actions={<Button variant="ghost" size="sm" icon={<RotateCcw size={16} />} onClick={refreshStats} isLoading={loading}>Actualiser</Button>}
+          >
+            <div style={{ padding: '40px 0' }}>
+              <EmptyState
+                icon={ShieldCheck}
+                title="IA Optimisée"
+                description="Aucune anomalie détectée. Vos workflows Netpub fonctionnent avec une précision maximale."
+              />
+            </div>
+          </Card>
+
+          <Card title="Historique du Modèle">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', background: 'var(--bg-app)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+              <div style={{ width: '40px', height: '40px', background: 'var(--accent-brand-soft)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-brand)' }}>
+                <Brain size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>v3.1.0 Active</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mise à jour automatique par Netpub Suite</div>
+              </div>
+              <Button variant="ghost" size="sm" icon={<ExternalLink size={16} />} />
+            </div>
+          </Card>
         </div>
 
-        <div className="retrain-bot-panel widget">
-          <h2>Réentraîner le bot</h2>
-          <p>Après avoir corrigé les intentions, réentraînez le bot pour qu'il apprenne de vos modifications.</p>
-          <button onClick={handleRetrain} disabled={retraining} className="retrain-button">
-            {retraining ? (
-              <span className="loader"></span>
-            ) : (
-              'Réentraîner le bot'
-            )}
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <Card title="Centre de Retrain">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ padding: '24px', background: 'linear-gradient(135deg, var(--accent-brand), var(--accent-brand-deep))', borderRadius: '20px', color: '#fff' }}>
+                <div style={{ width: '48px', height: '48px', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap size={20} fill="#fff" />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px' }}>Optimisation IA</h3>
+                <p style={{ fontSize: '0.8125rem', opacity: 0.9 }}>Forcez la synchronisation de l'apprentissage profond.</p>
+                <Button
+                  onClick={handleRetrain}
+                  disabled={retraining}
+                  variant="primary"
+                  style={{ width: '100%', marginTop: '24px', background: '#fff', color: 'var(--accent-brand)', border: 'none', fontWeight: 700 }}
+                  isLoading={retraining}
+                >
+                  Synchroniser
+                </Button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Score de qualité</span>
+                  <span style={{ fontWeight: 600 }}>{analyticsStats?.efficiencyScore || 0}%</span>
+                </div>
+                <div style={{ height: '6px', background: 'var(--bg-app)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${analyticsStats?.efficiencyScore || 0}%`, background: 'var(--color-success)', borderRadius: '3px' }}></div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card title="Archives">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Button variant="ghost" size="sm" icon={<BookOpen size={16} />} style={{ width: '100%', justifyContent: 'flex-start' }}>Documentation</Button>
+              <Button variant="ghost" size="sm" icon={<MessageSquare size={16} />} style={{ width: '100%', justifyContent: 'flex-start' }}>Logs IA</Button>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

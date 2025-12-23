@@ -166,8 +166,89 @@ export const portfolioProjects: PortfolioProject[] = [
 
   { id: 82, title: 'Spot Publicitaire 4K - 9', category: PortfolioCategory.VIDEO_SPOT_PUBLICITAIRE, mediaUrl: '/Video/spot-publicitaire-video/bcfd36a3-9ef7-4e84-b621-de6e850d5123.mp4', videoUrl: '/Video/spot-publicitaire-video/bcfd36a3-9ef7-4e84-b621-de6e850d5123.mp4', mediaType: 'video', likes: [], comments: [], likeCount: 217, commentCount: 36, hashtags: ['Spot', 'Vidéo', '4K'] },
 
-  { id: 83, title: 'Spot Publicitaire 4K - 10', category: PortfolioCategory.VIDEO_SPOT_PUBLICITAIRE, mediaUrl: '/Video/spot-publicitaire-video/fb9dbcf5-6d67-45ab-b759-165745ad963c.mp4', videoUrl: '/Video/spot-publicitaire-video/fb9dbcf5-6d67-45ab-b759-165745ad963c.mp4', mediaType: 'video', likes: [], comments: [], likeCount: 127, commentCount: 23, hashtags: ['Spot', 'Vidéo', '4K'] }
+  { id: 83, title: 'Spot Publicitaire 4K - 10', category: PortfolioCategory.VIDEO_SPOT_PUBLICITAIRE, mediaUrl: '/Video/spot-publicitaire-video/fb9dbcf5-6d67-45ab-b759-165745ad963c.mp4', videoUrl: '/Video/spot-publicitaire-video/fb9dbcf5-6d67-45ab-b759-165745ad963c.mp4', mediaType: 'video', likes: [], comments: [], likeCount: 127, commentCount: 23, hashtags: ['Spot', 'Vidéo', '4K'] },
 
+  // Influenceuses Section
+  {
+    id: 101,
+    title: 'Iliana',
+    category: PortfolioCategory.INFLUENCEUSES,
+    mediaUrl: '/images/influencers/iliana/1.jpg',
+    mediaType: 'image',
+    age: 20,
+    bio: 'Partage ses looks tendances et ses routines beauté au quotidien.',
+    hashtags: ['Mode', 'Beauté', 'Lifestyle'],
+    mediaItems: [
+      { url: '/images/influencers/iliana/1.jpg', type: 'image' },
+      { url: '/images/influencers/iliana/2.jpg', type: 'image' },
+      { url: '/images/influencers/iliana/3.jpg', type: 'image' },
+      { url: '/images/influencers/iliana/4.jpg', type: 'image' }
+    ]
+  },
+  {
+    id: 102,
+    title: 'Faeza',
+    category: PortfolioCategory.INFLUENCEUSES,
+    mediaUrl: '/images/influencers/faeza/1.jpg',
+    mediaType: 'image',
+    age: 22,
+    bio: 'Spécialisée dans la beauté, le sport et les services modernes.',
+    hashtags: ['Beauté', 'Sport', 'Lifestyle'],
+    mediaItems: [
+      { url: '/images/influencers/faeza/1.jpg', type: 'image' },
+      { url: '/images/influencers/faeza/2.jpg', type: 'image' },
+      { url: '/images/influencers/faeza/3.jpg', type: 'image' },
+      { url: '/images/influencers/faeza/4.jpg', type: 'image' }
+    ]
+  },
+  {
+    id: 103,
+    title: 'Anouk',
+    category: PortfolioCategory.INFLUENCEUSES,
+    mediaUrl: '/images/influencers/anouk/1.jpg',
+    mediaType: 'image',
+    age: 21,
+    bio: 'Passionnée par la mode et les collaborations innovantes.',
+    hashtags: ['Mode', 'Soins', 'Innovation'],
+    mediaItems: [
+      { url: '/images/influencers/anouk/1.jpg', type: 'image' },
+      { url: '/images/influencers/anouk/2.jpg', type: 'image' },
+      { url: '/images/influencers/anouk/3.jpg', type: 'image' },
+      { url: '/images/influencers/anouk/4.jpg', type: 'image' }
+    ]
+  },
+  {
+    id: 104,
+    title: 'Maëlys',
+    category: PortfolioCategory.INFLUENCEUSES,
+    mediaUrl: '/images/influencers/maelys/1.jpg',
+    mediaType: 'image',
+    age: 22,
+    bio: 'Met en avant les produits tendance et la beauté naturelle.',
+    hashtags: ['Lifestyle', 'Beauté', 'Tendance'],
+    mediaItems: [
+      { url: '/images/influencers/maelys/1.jpg', type: 'image' },
+      { url: '/images/influencers/maelys/2.jpg', type: 'image' },
+      { url: '/images/influencers/maelys/3.jpg', type: 'image' },
+      { url: '/images/influencers/maelys/4.jpg', type: 'image' }
+    ]
+  },
+  {
+    id: 105,
+    title: 'Tayla',
+    category: PortfolioCategory.INFLUENCEUSES,
+    mediaUrl: '/images/influencers/tayla/1.jpg',
+    mediaType: 'image',
+    age: 23,
+    bio: 'Dynamique et axée sur la mode et le bien-être.',
+    hashtags: ['Mode', 'Bien-être', 'Lifestyle'],
+    mediaItems: [
+      { url: '/images/influencers/tayla/1.jpg', type: 'image' },
+      { url: '/images/influencers/tayla/2.jpg', type: 'image' },
+      { url: '/images/influencers/tayla/3.jpg', type: 'image' },
+      { url: '/images/influencers/tayla/4.jpg', type: 'image' }
+    ]
+  }
 ];
 
 export const servicesInteractive = [

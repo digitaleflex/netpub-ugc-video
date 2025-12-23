@@ -53,8 +53,8 @@ const AppContent: React.FC = () => {
           <Route path="/legal-mentions" element={<LegalMentions />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/admin-login" element={<Login />} />
-          {/* Dashboard routes disabled for now
           <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<Overview />} />
             <Route path="conversations" element={<Conversations />} />
@@ -63,7 +63,6 @@ const AppContent: React.FC = () => {
             <Route path="analytics" element={<Analytics />} />
             <Route path="learning" element={<Learning />} />
           </Route>
-          */}
         </Routes>
       </main>
       {!isDashboardRoute && !isLoginPage && <Footer />}

@@ -1,22 +1,29 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client';
-import { withAccelerate } from '@prisma/extension-accelerate';
+
 
 const globalForPrisma = globalThis as unknown as {
   prisma: ReturnType<typeof createPrismaClient> | undefined;
 };
 
+
 function createPrismaClient() {
+  const connectionString = `${process.env.DATABASE_URL}`
+  const pool = new Pool({ connectionString })
+  const adapter = new PrismaPg(pool)
+
   const client = new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
-  return client.$extends(withAccelerate());
+  return client;
 }
 
 export const prisma =
