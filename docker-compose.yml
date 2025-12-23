@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME}/my-app:${IMAGE_TAG:-latest}
     ports:
       - "4000:4000"
     environment:
