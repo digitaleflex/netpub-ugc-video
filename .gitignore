@@ -16,6 +16,13 @@ dist-ssr
 *.db
 *.db-journal
 .env
+.env.*
+.env.local
+
+# Configuration repository (separate private repo)
+config/
+.env.production
+.env.staging
 
 # Editor directories and files
 .vscode/*
