@@ -19,7 +19,8 @@
     "db:seed": "tsx backend/prisma/seed.ts",
     "test": "jest --config=jest.config.cjs",
     "test:watch": "jest --watch --config=jest.config.cjs",
-    "test:coverage": "jest --coverage --config=jest.config.cjs"
+    "test:coverage": "jest --coverage --config=jest.config.cjs",
+    "lint": "eslint ."
   },
   "prisma": {
     "seed": "tsx backend/prisma/seed.ts"
@@ -47,9 +48,9 @@
     "graphql-middleware": "^6.1.35",
     "gsap": "^3.13.0",
     "jsdom": "^27.1.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "lucide-react": "^0.548.0",
-    "nodemailer": "^7.0.10",
+    "nodemailer": "^7.0.11",
     "prisma": "^7.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -68,6 +69,7 @@
     "@vitejs/plugin-react": "^5.1.0",
     "baseline-browser-mapping": "^2.9.11",
     "concurrently": "^9.2.1",
+    "eslint": "^9.39.2",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.6",
     "tsx": "^4.20.6",
