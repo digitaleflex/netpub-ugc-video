@@ -44,8 +44,8 @@ if (!process.env.JWT_SECRET) {
 }
 
 // Middleware avec logs
-app.use(cors());
-app.use(helmet(SecurityUtils.getSecurityHeaders() as any));
+app.use(cors(SecurityUtils.getCorsConfig()));
+app.use(helmet(SecurityUtils.getHelmetConfig()));
 
 // Configure session middleware
 app.use(session({
@@ -59,13 +59,6 @@ app.use(session({
   }
 }));
 
-app.use((req, res, next) => {
-  next();
-});
-
-// Make CSRF token available to the frontend
-// import { csrfApolloMiddleware, csrfProtection } from './lib/csrfMiddleware.js';
-// ...
 app.get('/csrf-token', (req, res) => {
   res.json({ csrfToken: 'CSRF_DISABLED' }); // Return a dummy token since CSRF is disabled
 });

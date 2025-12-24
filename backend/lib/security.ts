@@ -94,6 +94,22 @@ export class SecurityUtils {
     };
   }
 
+  // Helmet config object
+  static getHelmetConfig() {
+    return {
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          fontSrc: ["'self'", "https:"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    };
+  }
+
   // SQL injection prevention (additional layer)
   static sanitizeSqlInput(input: string): string {
     return input.replace(/['";\\]/g, '');
