@@ -46,7 +46,7 @@ WORKDIR /app
 COPY backend/package*.json ./backend/
 
 # Install backend dependencies
-RUN cd backend && npm ci
+RUN cd backend && npm install
 
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
@@ -84,6 +84,7 @@ COPY src/ ./src/
 COPY public/ ./public/
 COPY vite.config.ts ./
 COPY tsconfig.json ./
+COPY tsconfig.node.json ./
 COPY index.html ./
 
 # Build frontend with error handling

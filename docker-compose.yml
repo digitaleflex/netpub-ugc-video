@@ -3,7 +3,7 @@ services:
   # Application Service
   # ====================================
   app:
-    image: eflexcloud/netpub-ugc-video:v1.1.0
+    image: eflexcloud/netpub-ugc-video:v1.1.1
     env_file:
       - .env.production
     volumes:
@@ -23,7 +23,7 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:4000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -35,7 +35,6 @@ services:
         max-file: "3"
     environment:
       - PORT=4000
-      - RAILWAY_ENVIRONMENT=${RAILWAY_ENVIRONMENT}
       - FRONTEND_URL=https://netpub.eurinhash.com
     networks:
       - proxy
@@ -45,12 +44,14 @@ services:
       # Frontend Router
       - "traefik.http.routers.netpub-front.rule=Host(`netpub.eurinhash.com`)"
       - "traefik.http.routers.netpub-front.entrypoints=websecure"
-      - "traefik.http.routers.netpub-front.tls.certresolver=le"
+      - "traefik.http.routers.netpub-front.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.netpub-front.service=netpub-front"
       - "traefik.http.services.netpub-front.loadbalancer.server.port=4000"
       # Backend Router
       - "traefik.http.routers.netpub-api.rule=Host(`api-netpub.eurinhash.com`)"
       - "traefik.http.routers.netpub-api.entrypoints=websecure"
-      - "traefik.http.routers.netpub-api.tls.certresolver=le"
+      - "traefik.http.routers.netpub-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.netpub-api.service=netpub-api"
       - "traefik.http.services.netpub-api.loadbalancer.server.port=4000"
 
   # ====================================

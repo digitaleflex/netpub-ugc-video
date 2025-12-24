@@ -120,18 +120,21 @@ async function startApolloServer() {
 
     await server.start();
     server.applyMiddleware({
-        app,
+        app: app as any,
         path: '/graphql',
         cors: false // Handle CORS manually above
     });
 
     // Serve Static Frontend Files (Production)
     if (process.env.NODE_ENV === 'production') {
-        const distPath = path.join(__dirname, '../dist');
+        // Path from backend/dist/server.js to /app/dist (frontend build)
+        const distPath = path.join(__dirname, '../../dist');
         app.use(express.static(distPath));
-        app.get('*', (req, res) => {
+        app.get('*', (req, res, next) => {
             // Don't intercept API routes
-            if (req.path.startsWith('/graphql') || req.path.startsWith('/health')) return;
+            if (req.path.startsWith('/graphql') || req.path.startsWith('/health') || req.path.startsWith('/csrf-token')) {
+                return next();
+            }
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }

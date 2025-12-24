@@ -1,5 +1,5 @@
 import { prisma } from './prisma.js';
-import { Prisma } from '@prisma/client';
+// Prisma types are inferred from the client
 
 export class DashboardService {
   private static async getTrend(model: string, where: any = {}, dateField: string = 'createdAt') {
@@ -62,8 +62,8 @@ export class DashboardService {
         prisma.order.count({ where: { status: 'pending' } }),
         prisma.order.count({ where: { status: 'confirmed' } }),
         prisma.order.count({ where: { status: 'delivered' } }),
-        prisma.comment.count(),
-        prisma.like.count(),
+        Promise.resolve(0), // totalComments - model removed
+        Promise.resolve(0), // totalLikes - model removed
         prisma.conversation.findMany({
           take: 5,
           orderBy: { lastActivity: 'desc' },
@@ -77,16 +77,8 @@ export class DashboardService {
           take: 5,
           orderBy: { date: 'desc' },
         }),
-        prisma.comment.findMany({
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-          include: { user: true, project: true },
-        }),
-        prisma.like.findMany({
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-          include: { user: true, project: true },
-        }),
+        Promise.resolve([]), // recentComments - model removed
+        Promise.resolve([]), // recentLikes - model removed
         this.getTrend('conversation'),
         this.getTrend('appointment', {}, 'date'),
         this.getTrend('order', {}, 'date'),
@@ -138,8 +130,8 @@ export class DashboardService {
         prisma.appointment.findMany({ select: { status: true } }),
         prisma.order.findMany({ select: { status: true } })
       ]);
-      const successApp = allApps.filter(a => ['confirmed', 'completed'].includes(a.status)).length;
-      const successOrd = allOrds.filter(o => ['confirmed', 'delivered', 'managed'].includes(o.status)).length;
+      const successApp = allApps.filter((a: { status: string }) => ['confirmed', 'completed'].includes(a.status)).length;
+      const successOrd = allOrds.filter((o: { status: string }) => ['confirmed', 'delivered', 'managed'].includes(o.status)).length;
       const totalOutcomes = allApps.length + allOrds.length;
       const efficiencyScore = totalOutcomes > 0 ? ((successApp + successOrd) / totalOutcomes) * 100 : 0;
       const conversionRate = totalConversations > 0 ? (totalOrders / totalConversations) * 100 : 0;
@@ -147,7 +139,7 @@ export class DashboardService {
       // Intentions basées sur les services demandés dans les rendez-vous
       const appointments = await prisma.appointment.findMany({ select: { service: true } });
       const counts: Record<string, number> = {};
-      appointments.forEach(a => counts[a.service] = (counts[a.service] || 0) + 1);
+      appointments.forEach((a: { service: string }) => counts[a.service] = (counts[a.service] || 0) + 1);
 
       const mostFrequentIntentions = Object.entries(counts)
         .map(([name, count]) => ({ name, count, icon: '⚡' }))
@@ -197,7 +189,7 @@ export class DashboardService {
   }
 
   static async getAllOrders(limit: number = 20, offset: number = 0, status?: string, date?: string) {
-    const where: Prisma.OrderWhereInput = {};
+    const where: any = {};
     if (status) {
       where.status = status;
     }
@@ -226,7 +218,7 @@ export class DashboardService {
   }
 
   static async getAllAppointments(limit: number = 20, offset: number = 0, status?: string, date?: string) {
-    const where: Prisma.AppointmentWhereInput = {};
+    const where: any = {};
     if (status) {
       where.status = status;
     }
@@ -276,7 +268,7 @@ export class DashboardService {
       });
 
       console.log(`✅ ${conversations.length} conversations récupérées`);
-      return conversations.map(conv => ({
+      return conversations.map((conv: any) => ({
         ...conv,
         messages: [...conv.messages].reverse(), // Most recent first
       }));
