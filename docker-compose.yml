@@ -3,15 +3,7 @@ services:
   # Application Service
   # ====================================
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
-      args:
-        NODE_ENV: production
-      cache_from:
-        - netpub-app:latest
-    image: netpub-app:latest
+    image: digitaleflex/netpub-ugc-video:latest
     container_name: netpub-app
     environment:
       NODE_ENV: production
@@ -42,7 +34,6 @@ services:
         condition: service_healthy
     networks:
       - netpub-internal
-      - proxy  # Réseau Traefik
     restart: unless-stopped
     deploy:
       resources:
@@ -269,9 +260,9 @@ networks:
     internal: false
     
   # Réseau Traefik externe (doit exister déjà)
-  proxy:
-    external: true
-    name: proxy
+  # proxy:
+  #   external: true
+  #   name: proxy
 
 # ====================================
 # Volumes
