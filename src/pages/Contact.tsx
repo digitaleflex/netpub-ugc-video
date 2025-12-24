@@ -8,7 +8,7 @@ import ThankYouModal from '../components/ThankYouModal'; // Import the new modal
 import SEO from '../components/SEO';
 import { fetchCsrfToken } from '../utils/csrf';
 
-const GRAPHQL_ENDPOINT = '/graphql'; // Assuming your GraphQL endpoint is /graphql
+const GRAPHQL_ENDPOINT = `${import.meta.env.VITE_API_URL || ''}/graphql`;
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -162,7 +162,7 @@ const Contact = () => {
 
   return (
     <div className="page-container contact-page">
-      <SEO 
+      <SEO
         title="Contactez-Nous - Démarrons Votre Projet Vidéo"
         description="Contactez l\'agence NetPub pour discuter de votre projet de vidéo UGC ou publicitaire. Remplissez notre formulaire, appelez-nous, ou utilisez notre chatbot pour une réponse immédiate."
         keywords="contact, devis, collaboration, projet vidéo, agence UGC, nous contacter, netpub"
@@ -230,18 +230,18 @@ const Contact = () => {
       {/* Section Réseaux sociaux (bande dynamique) */}
       <section ref={socialMarqueeRef} className={`social-marquee-section bg-gray-900 text-white py-8 fade-up-section ${isSocialMarqueeVisible ? 'is-visible' : ''}`}>
         <div className="social-marquee-track">
-            {socialLinks.map((social, index) => (
-              <a key={index} href={social.url} target="_blank" rel="noopener noreferrer" className="social-marquee-item">
-                {social.icon}
-                <span className="ml-2">{social.name}</span>
-              </a>
-            ))}
-            {socialLinks.map((social, index) => (
-              <a key={index + socialLinks.length} href={social.url} target="_blank" rel="noopener noreferrer" className="social-marquee-item" aria-hidden="true">
-                {social.icon}
-                <span className="ml-2">{social.name}</span>
-              </a>
-            ))}
+          {socialLinks.map((social, index) => (
+            <a key={index} href={social.url} target="_blank" rel="noopener noreferrer" className="social-marquee-item">
+              {social.icon}
+              <span className="ml-2">{social.name}</span>
+            </a>
+          ))}
+          {socialLinks.map((social, index) => (
+            <a key={index + socialLinks.length} href={social.url} target="_blank" rel="noopener noreferrer" className="social-marquee-item" aria-hidden="true">
+              {social.icon}
+              <span className="ml-2">{social.name}</span>
+            </a>
+          ))}
         </div>
       </section>
 

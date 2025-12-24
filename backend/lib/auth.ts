@@ -159,7 +159,7 @@ export class AuthService {
 
       // Validate password strength
       if (password.length < 8) {
-        console.error('❌ Password too short for registration:', password.length);
+        console.error('❌ Password too short for registration');
         return null;
       }
 

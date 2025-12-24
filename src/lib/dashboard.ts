@@ -1,42 +1,97 @@
-import { prisma } from '../backend/lib/prisma';
+
+import { fetchCsrfToken } from '../utils/csrf';
+
+const GRAPHQL_ENDPOINT = `${import.meta.env.VITE_API_URL || ''}/graphql`;
+
+// Helper for GraphQL requests
+async function graphqlRequest(query: string, variables: any = {}) {
+  const token = localStorage.getItem('token');
+  const headers: any = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Add CSRF token if needed
+  try {
+    const csrf = await fetchCsrfToken();
+    if (csrf) headers['X-CSRF-Token'] = csrf;
+  } catch (e) {
+    // Ignore CSRF fetch error for now if it fails, or log it
+    console.warn("CSRF fetch failed", e);
+  }
+
+  const response = await fetch(GRAPHQL_ENDPOINT, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ query, variables }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Network response was not ok: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  if (result.errors) {
+    throw new Error(result.errors[0].message);
+  }
+
+  return result.data;
+}
 
 export class DashboardService {
   static async getDashboardStats() {
-    try {
-      const [
-        totalProjects,
-        totalUsers,
-        totalConversations,
-        recentConversations
-      ] = await Promise.all([
-        prisma.project.count(),
-        prisma.user.count(),
-        prisma.conversation.count(),
-        prisma.conversation.findMany({
-          take: 5,
-          orderBy: { lastActivity: 'desc' },
-          include: {
-            messages: { take: 1, orderBy: { timestamp: 'desc' } },
-            orders: true,
-            appointments: true
+    const query = `
+      query GetDashboardStats {
+        dashboardStats {
+          totalProjects: totalConversations 
+          totalUsers
+          totalConversations
+          recentConversations {
+            id
+            userName
+            lastActivity
+            hasAppointment
+            hasCallScheduled
+            hasOrderPlaced
+            messages {
+               text
+            }
+            orders {
+               id
+            }
+            appointments {
+               id
+            }
           }
-        })
-      ]);
+        }
+      }
+    `;
+
+    try {
+      // Note: The original getDashboardStats returned mixed data. 
+      // Mapping the GraphQL response to match the expected structure if needed.
+      // The schema 'DashboardStats' might differ slightly from the original object structure.
+      // Adjusting to match schema.
+      const data = await graphqlRequest(query);
+      const stats = data.dashboardStats;
 
       return {
-        totalProjects,
-        totalUsers,
-        totalConversations,
-        recentConversations: recentConversations.map(conv => ({
+        totalProjects: 0, // Not in DashboardStats schema, defaulting
+        totalUsers: 0, // Not in schema
+        totalConversations: stats.totalConversations,
+        recentConversations: stats.recentConversations.map((conv: any) => ({
           id: conv.id,
-          userName: conv.userName,
+          userName: conv.name || conv.userName || 'Visitor',
           lastActivity: conv.lastActivity,
           hasAppointment: conv.hasAppointment,
           hasCallScheduled: conv.hasCallScheduled,
           hasOrderPlaced: conv.hasOrderPlaced,
-          lastMessage: conv.messages[0]?.text || null,
-          orderCount: conv.orders.length,
-          appointmentCount: conv.appointments.length
+          lastMessage: conv.messages?.[0]?.text || null,
+          orderCount: conv.orders?.length || 0,
+          appointmentCount: conv.appointments?.length || 0
         }))
       };
     } catch (error) {
@@ -51,15 +106,31 @@ export class DashboardService {
   }
 
   static async getConversations() {
-    try {
-      return await prisma.conversation.findMany({
-        orderBy: { lastActivity: 'desc' },
-        include: {
-          messages: { orderBy: { timestamp: 'desc' }, take: 1 },
-          orders: true,
-          appointments: true
+    const query = `
+      query GetConversations {
+        conversations {
+          id
+          userName
+          lastActivity
+          hasAppointment
+          hasCallScheduled
+          hasOrderPlaced
+          messages {
+            text
+            timestamp
+          }
+           orders {
+               id
+            }
+            appointments {
+               id
+            }
         }
-      });
+      }
+    `;
+    try {
+      const data = await graphqlRequest(query);
+      return data.conversations;
     } catch (error) {
       console.error('Error getting conversations:', error);
       return [];
@@ -67,13 +138,27 @@ export class DashboardService {
   }
 
   static async getAppointments() {
-    try {
-      return await prisma.appointment.findMany({
-        orderBy: { date: 'asc' },
-        include: {
-          conversation: true
+    const query = `
+      query GetAllAppointments {
+        allAppointments {
+          appointments {
+            id
+            clientName
+            date
+            time
+            service
+            status
+            conversation {
+              id
+              clientName
+            }
+          }
         }
-      });
+      }
+    `;
+    try {
+      const data = await graphqlRequest(query);
+      return data.allAppointments.appointments;
     } catch (error) {
       console.error('Error getting appointments:', error);
       return [];
@@ -81,13 +166,26 @@ export class DashboardService {
   }
 
   static async getOrders() {
-    try {
-      return await prisma.order.findMany({
-        orderBy: { date: 'desc' },
-        include: {
-          conversation: true
+    const query = `
+      query GetAllOrders {
+        allOrders {
+          orders {
+            id
+            clientName
+            type
+            status
+            date
+            conversation {
+              id
+              clientName
+            }
+          }
         }
-      });
+      }
+    `;
+    try {
+      const data = await graphqlRequest(query);
+      return data.allOrders.orders;
     } catch (error) {
       console.error('Error getting orders:', error);
       return [];

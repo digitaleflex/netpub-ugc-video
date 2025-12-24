@@ -2,7 +2,7 @@ import { prisma } from './prisma.js';
 import { Prisma } from '@prisma/client';
 
 export class DashboardService {
-  private static async getTrend(model: any, where: any = {}, dateField: string = 'createdAt') {
+  private static async getTrend(model: string, where: any = {}, dateField: string = 'createdAt') {
     const now = new Date();
     const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);

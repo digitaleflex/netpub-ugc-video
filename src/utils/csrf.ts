@@ -5,7 +5,8 @@ export const fetchCsrfToken = async (maxRetries = 5, retryDelayMs = 1000): Promi
 
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const response = await fetch('/csrf-token');
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/csrf-token`);
       if (!response.ok) {
         // If it's a 500 error, and we still have retries, wait and try again
         if (response.status === 500 && i < maxRetries - 1) {
