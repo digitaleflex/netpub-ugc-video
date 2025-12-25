@@ -73,7 +73,7 @@ class EmailService {
       }
 
       const mailOptions = {
-        from: '"NetPub Contact" <noreply@netpub.agency>',
+        from: '"NetPub Contact" <org.netpub@gmail.com>',
         to: process.env.ADMIN_EMAIL,
         subject: `Nouveau message de contact - ${contactData.name}`,
         html: `
@@ -145,7 +145,7 @@ Ce message a été envoyé automatiquement depuis le formulaire de contact NetPu
       }
 
       const mailOptions = {
-        from: '"NetPub Agency" <noreply@netpub.agency>',
+        from: '"NetPub Agency" <org.netpub@gmail.com>',
         to: contactData.email,
         subject: 'Merci pour votre message - NetPub Agency',
         html: `
@@ -237,7 +237,7 @@ L'équipe NetPub Agency
 
       // Email to Admin
       const adminMailOptions = {
-        from: '"NetPub RDV" <noreply@netpub.agency>',
+        from: '"NetPub RDV" <org.netpub@gmail.com>',
         to: process.env.ADMIN_EMAIL,
         subject: `Nouveau Rendez-vous : ${appointmentData.service} - ${appointmentData.clientName}`,
         html: `
@@ -259,7 +259,7 @@ L'équipe NetPub Agency
 
       // Email to Client
       const clientMailOptions = {
-        from: '"NetPub Agency" <noreply@netpub.agency>',
+        from: '"NetPub Agency" <org.netpub@gmail.com>',
         to: appointmentData.clientEmail,
         subject: 'Confirmation de votre demande de rendez-vous - NetPub Agency',
         html: `
@@ -310,7 +310,7 @@ L'équipe NetPub Agency
 
       // Email to Admin
       const adminMailOptions = {
-        from: '"NetPub Commande" <noreply@netpub.agency>',
+        from: '"NetPub Commande" <org.netpub@gmail.com>',
         to: process.env.ADMIN_EMAIL,
         subject: `Nouvelle Commande : ${orderData.service} - ${orderData.clientName}`,
         html: `
@@ -331,7 +331,7 @@ L'équipe NetPub Agency
 
       // Email to Client
       const clientMailOptions = {
-        from: '"NetPub Agency" <noreply@netpub.agency>',
+        from: '"NetPub Agency" <org.netpub@gmail.com>',
         to: orderData.clientEmail,
         subject: 'Confirmation de votre commande - NetPub Agency',
         html: `
@@ -355,6 +355,74 @@ L'équipe NetPub Agency
       return true;
     } catch (error) {
       console.error('❌ Error sending order notification email:', error);
+      return false;
+    }
+  }
+
+  async sendConversationNotification(conversationData: {
+    id: string;
+    clientName?: string;
+    clientEmail?: string;
+    clientPhone?: string;
+    discovery?: string;
+    feedback?: string;
+    lastMessage?: string;
+  }): Promise<boolean> {
+    try {
+      const mailOptions = {
+        from: '"NetPub Chat" <org.netpub@gmail.com>',
+        to: process.env.ADMIN_EMAIL,
+        subject: `Nouvelle interaction Chat : ${conversationData.clientName || 'Anonyme'}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+              Nouvelle Interaction sur le Chat
+            </h2>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>ID Conversation :</strong> ${conversationData.id}</p>
+              <p><strong>Client :</strong> ${conversationData.clientName || 'Non renseigné'}</p>
+              <p><strong>Email :</strong> ${conversationData.clientEmail || 'Non renseigné'}</p>
+              <p><strong>Téléphone :</strong> ${conversationData.clientPhone || 'Non renseigné'}</p>
+              ${conversationData.discovery ? `<p><strong>Découverte :</strong> ${conversationData.discovery}</p>` : ''}
+              ${conversationData.feedback ? `<p><strong>Feedback/Recommandations :</strong> ${conversationData.feedback}</p>` : ''}
+              <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+              <p><strong>Dernier message :</strong></p>
+              <div style="background: white; padding: 15px; border-radius: 5px; border-left: 4px solid #667eea;">
+                ${conversationData.lastMessage || 'Aucun message'}
+              </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+              <a href="https://netpub.agency/dashboard/conversations" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                Voir sur le Dashboard
+              </a>
+            </div>
+          </div>
+        `
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Conversation notification email sent successfully to admin: ${process.env.ADMIN_EMAIL}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error sending conversation notification email:', error);
+      return false;
+    }
+  }
+
+  async sendGenericEmail({ subject, html }: { subject: string; html: string }): Promise<boolean> {
+    try {
+      const mailOptions = {
+        from: '"NetPub System" <org.netpub@gmail.com>',
+        to: process.env.ADMIN_EMAIL,
+        subject,
+        html
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Generic email "${subject}" sent to admin.`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error sending generic email:', error);
       return false;
     }
   }

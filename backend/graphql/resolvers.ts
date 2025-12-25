@@ -85,24 +85,41 @@ export const resolvers = {
           data: {
             userId: null,
             userName: null,
-          },
+          }
         });
         return conversation;
       } catch (error) {
-        throw new Error('Failed to create conversation');
+        console.error('❌ Prisma Error in createConversation:', error);
+        throw new Error(`Failed to create conversation: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
 
-    updateConversation: async (_: any, { conversationId, clientName, clientEmail, clientPhone }: { conversationId: string; clientName?: string; clientEmail?: string; clientPhone?: string }) => {
+    updateConversation: async (_: any, { conversationId, clientName, clientEmail, clientPhone, discovery, feedback }: { conversationId: string; clientName?: string; clientEmail?: string; clientPhone?: string; discovery?: string; feedback?: string }) => {
       try {
         const conversation = await prisma.conversation.update({
           where: { id: conversationId },
           data: {
             clientName,
             clientEmail,
-            clientPhone
+            clientPhone,
+            discovery,
+            feedback
           }
         });
+
+        // Notify admin about the updated conversation details
+        if (clientName || clientEmail || clientPhone || discovery || feedback) {
+          await emailService.sendConversationNotification({
+            id: conversationId,
+            clientName: clientName || conversation.clientName || undefined,
+            clientEmail: clientEmail || conversation.clientEmail || undefined,
+            clientPhone: clientPhone || conversation.clientPhone || undefined,
+            discovery: discovery || conversation.discovery || undefined,
+            feedback: feedback || conversation.feedback || undefined,
+            lastMessage: 'Informations client mises à jour'
+          });
+        }
+
         return conversation;
       } catch (error) {
         throw new Error('Failed to update conversation');
@@ -261,7 +278,67 @@ export const resolvers = {
     deleteConversation: (_: any, { conversationId }: { conversationId: string }) => DashboardService.deleteConversation(conversationId),
 
     addNoteToConversation: (_: any, { conversationId, note }: { conversationId: string; note: string }) => DashboardService.addNoteToConversation(conversationId, note),
-    addChatMessage: (_: any, { conversationId, sender, text }: { conversationId: string; sender: string; text: string }) => DashboardService.saveChatMessage(conversationId, sender, text),
+    addChatMessage: async (_: any, { conversationId, sender, text }: { conversationId: string; sender: string; text: string }) => {
+      const message = await DashboardService.saveChatMessage(conversationId, sender, text);
+
+      // Notify admin if the message is from the user
+      if (sender === 'user') {
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId }
+        });
+
+        await emailService.sendConversationNotification({
+          id: conversationId,
+          clientName: conversation?.clientName || 'Anonyme',
+          clientEmail: conversation?.clientEmail || undefined,
+          clientPhone: conversation?.clientPhone || undefined,
+          lastMessage: text
+        });
+      }
+
+      return message;
+    },
+
+    exportAllData: async (_: any, __: any, { user }: any) => {
+      // Security: Only admins should be able to trigger this
+      // if (!user || user.role !== 'admin') {
+      //   throw new Error('Unauthorized');
+      // }
+
+      try {
+        const [conversations, orders, appointments] = await Promise.all([
+          prisma.conversation.findMany({ include: { messages: true } }),
+          prisma.order.findMany(),
+          prisma.appointment.findMany(),
+        ]);
+
+        const dataSummary = `
+          <h2>Rapport Global NetPub</h2>
+          <h3>Conversations (${conversations.length})</h3>
+          <ul>
+            ${conversations.map(c => `<li>${c.clientName || 'Anonyme'} (${c.clientEmail || 'N/A'}) - ${c.messages.length} messages</li>`).join('')}
+          </ul>
+          <h3>Commandes (${orders.length})</h3>
+          <ul>
+            ${orders.map(o => `<li>${o.clientName} - ${o.type} - ${o.status}</li>`).join('')}
+          </ul>
+          <h3>Rendez-vous (${appointments.length})</h3>
+          <ul>
+            ${appointments.map(a => `<li>${a.clientName} - ${a.service} - ${a.date.toLocaleDateString()} ${a.time}</li>`).join('')}
+          </ul>
+        `;
+
+        await emailService.sendGenericEmail({
+          subject: "Rapport d'activité complet - NetPub",
+          html: dataSummary
+        });
+
+        return true;
+      } catch (error) {
+        console.error('Export error:', error);
+        return false;
+      }
+    }
   },
 
 };

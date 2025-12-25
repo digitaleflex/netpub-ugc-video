@@ -25,6 +25,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   projects Project[]
+  comments Comment[]
+  likes    Like[]
 
   @@map("users")
 }
@@ -42,6 +44,8 @@ model Project {
   userId       String
   user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   ProjectMedia ProjectMedia[]
+  comments     Comment[]
+  likes        Like[]
 }
 
 
@@ -54,6 +58,8 @@ model Conversation {
   clientEmail      String?
   clientPhone      String?
   clientName       String?
+  discovery        String?
+  feedback         String?
   hasAppointment   Boolean  @default(false)
   hasCallScheduled Boolean  @default(false)
   hasOrderPlaced   Boolean  @default(false)
@@ -113,6 +119,44 @@ model Appointment {
   @@index([conversationId])
   @@index([date])
   @@map("appointments")
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  content     String
+  anonymousId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  projectId Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   Comment?  @relation("CommentToComment", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentToComment")
+
+  @@index([projectId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Like {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  anonymousId String?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  projectId Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@map("likes")
 }
 
 // Modèle pour améliorer Project avec plus de détails

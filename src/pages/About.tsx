@@ -5,6 +5,7 @@ import StatsSection from '../components/StatsSection';
 import TestimonialCarousel from '../components/TestimonialCarousel';
 import CallToAction from '../components/CallToAction';
 import ElectricBorder from '../components/ElectricBorder';
+import SEO from '../components/SEO';
 
 const About: React.FC = () => {
     // Refs for fade-in animations
@@ -18,6 +19,11 @@ const About: React.FC = () => {
 
     return (
         <div className="page-container new-about-page">
+            <SEO
+                title="À Propos - Notre Agence & Notre Mission"
+                description="Découvrez l'histoire de NetPub, nos valeurs, et notre méthode unique pour créer des vidéos qui captivent et convertissent. Une agence passionnée par le storytelling."
+                keywords="à propos, agence vidéo, mission, valeurs, expertise, équipe creative, netpub"
+            />
 
             {/* 1. Introduction Section */}
             <section ref={introRef} className={`about-intro-section fade-up-section ${isIntroVisible ? 'is-visible' : ''}`}>

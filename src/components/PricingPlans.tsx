@@ -36,7 +36,7 @@ const PricingPlans: React.FC = () => {
           'Optimisation de la première campagne publicitaire'
         ]
       },
-      advantage: 'Idéal pour les jeunes marques qui veulent lancer leur communication avec impact.',
+      advantage: 'Une identité visuelle claire et un contenu impactant dès le départ, sans investissement lourd.',
       idealFor: 'les e-commerçants, les entreprises locales et ceux qui débutent.'
     },
     {
@@ -57,18 +57,19 @@ const PricingPlans: React.FC = () => {
         strategy: [
           'Audit complet de votre marque',
           'Stratégie marketing sur 3 mois',
+          'Gestion & automatisation des réseaux sociaux',
           'Gestion publicitaire sur Meta Ads + TikTok',
           'Suivi mensuel des performances et ajustements'
         ]
       },
-      advantage: 'Parfait pour les marques qui veulent accélérer avec du contenu régulier, stylé et orienté résultats.',
+      advantage: 'Automatisation de vos réseaux sociaux pour une croissance régulière et mesurable, sans gestion quotidienne.',
       idealFor: 'les marques en pleine croissance et en essor.'
     },
     {
       id: 'entreprise',
       name: 'Plan ENTREPRISE',
       icon: <Crown size={24} className="plan-icon" />,
-      tagline: 'Pour s\'imposerdurablement',
+      tagline: 'Pour s\'imposer durablement sur votre marché',
       badge: { text: 'Luxe & performance', color: 'entreprise' },
       features: {
         content: [
@@ -81,6 +82,8 @@ const PricingPlans: React.FC = () => {
         strategy: [
           'Audit approfondi de votre marque & de vos publicités',
           'Stratégie marketing personnalisée sur 3 mois',
+          'Automatisation avancée & intelligence artificielle',
+          'Chatbot de support client intégré à vos réseaux sociaux et site web pour une assistance 24/7 et génération de leads.',
           'Gestion publicitaire multi-plateforme',
           'Analyse comportementale de l\'audience',
           'Suivi hebdomadaire + optimisations continues'

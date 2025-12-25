@@ -1,18 +1,21 @@
 import React from 'react';
 import { HashRouter as Router } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { ChatbotProvider } from './contexts/ChatbotContext';
 import { AuthProvider } from './contexts/AuthContext';
-import AppContent from './components/AppContent'; // Import AppContent
+import AppContent from './components/AppContent';
 
 function App() {
   return (
-    <AuthProvider>
-      <ChatbotProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </ChatbotProvider>
-    </AuthProvider>
+    <HelmetProvider>
+      <AuthProvider>
+        <ChatbotProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </ChatbotProvider>
+      </AuthProvider>
+    </HelmetProvider>
   );
 }
 

@@ -213,3 +213,65 @@
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(0,0,0,0.2);
 }
+@media (max-width: 768px) {
+  .influencer-card {
+    border-radius: 20px;
+  }
+
+  .influencer-content-overlay {
+    padding: 16px;
+  }
+
+  /* Hide badges to save space as requested */
+  .influencer-badges-row {
+    display: none;
+  }
+
+  .influencer-name-age {
+    font-size: 1.1rem; /* Significantly reduced */
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .influencer-carousel-nav {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* Maintain original circle styles - overrides removed */
+
+  .circle-label {
+    top: -24px;
+    font-size: 0.6rem;
+    padding: 2px 8px;
+  }
+
+  .carousel-dots {
+    margin-bottom: 12px;
+  }
+
+  .influencer-bottom-info {
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .influencer-bio-row {
+    font-size: 0.8rem;
+    line-height: 1.3;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .influencer-continue-btn {
+    padding: 10px 24px;
+    font-size: 0.85rem;
+    gap: 8px;
+  }
+}

@@ -20,6 +20,7 @@ const Contact = () => {
   });
   const [submitted, setSubmitted] = useState(false); // To show the modal
   const [loading, setLoading] = useState(false);
+  const [modalInfo, setModalInfo] = useState({ name: '', email: '' });
   const [error, setError] = useState<string | null>(null);
 
   const contactFormRef = useRef<HTMLDivElement>(null);
@@ -114,7 +115,15 @@ const Contact = () => {
       const result = await response.json();
 
       if (result.data && result.data.sendContactMessage) {
+        setModalInfo({ name: formData.name, email: formData.email });
         setSubmitted(true);
+        setFormData({
+          name: '',
+          email: '',
+          company: '',
+          service: '',
+          message: '',
+        });
       } else {
         console.error('Error sending contact message:', result.errors);
         setError(result.errors ? result.errors[0].message : 'Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer.');
@@ -255,8 +264,8 @@ const Contact = () => {
       <ThankYouModal
         isOpen={submitted}
         onClose={handleCloseModal}
-        clientName={formData.name}
-        clientEmail={formData.email}
+        clientName={modalInfo.name}
+        clientEmail={modalInfo.email}
       />
     </div>
   );

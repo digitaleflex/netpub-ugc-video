@@ -105,6 +105,19 @@ const collecterFeedbackSite: FunctionDeclaration = {
     },
 };
 
+const enregistrerNomClient: FunctionDeclaration = {
+    name: 'enregistrerNomClient',
+    description: "Enregistrer immédiatement le nom du client dès qu'il se présente, même si les autres infos sont manquantes.",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            nom: { type: Type.STRING, description: "Le nom de famille du client." },
+            prenom: { type: Type.STRING, description: "Le prénom du client." },
+        },
+        required: ['prenom'],
+    },
+};
+
 
 const Chatbot: React.FC = () => {
     const { isOpen, toggleChatbot, closeChatbot } = useChatbot(); // Use context
@@ -115,11 +128,13 @@ const Chatbot: React.FC = () => {
     const [conversationId, setConversationId] = useState<string | null>(null);
     const [userInfoCollected, setUserInfoCollected] = useState(false);
     const [feedbackCollected, setFeedbackCollected] = useState(false);
+    const [followUpStep, setFollowUpStep] = useState<'none' | 'discovery' | 'feedback' | 'completed'>('none');
     const [recognitionError, setRecognitionError] = useState<string | null>(null);
 
     const aiRef = useRef<GoogleGenAI | null>(null);
     const recognitionRef = useRef<any | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
+    const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     const API_KEY = (import.meta as any).env.VITE_API_KEY;
@@ -127,11 +142,25 @@ const Chatbot: React.FC = () => {
 
     // Notification logic removed for now, can be re-added if needed via context
 
+    const stopSpeaking = () => {
+        if (audioSourceRef.current) {
+            try {
+                audioSourceRef.current.stop();
+            } catch (e) { }
+            audioSourceRef.current = null;
+        }
+    };
+
+
+
     const speakText = async (text: string) => {
         if (!aiRef.current || !audioContextRef.current || !text) return;
+
+        stopSpeaking(); // Stop any current audio before starting new one
+
         try {
             const response = await aiRef.current.models.generateContent({
-                model: "gemini-2.5-flash-preview-tts",
+                model: "gemini-2.0-flash", // Use stable model
                 contents: [{ parts: [{ text: text }] }],
                 config: {
                     responseModalities: [Modality.AUDIO],
@@ -152,6 +181,14 @@ const Chatbot: React.FC = () => {
                     const source = audioContextRef.current.createBufferSource();
                     source.buffer = audioBuffer;
                     source.connect(audioContextRef.current.destination);
+
+                    audioSourceRef.current = source;
+                    source.onended = () => {
+                        if (audioSourceRef.current === source) {
+                            audioSourceRef.current = null;
+                        }
+                    };
+
                     source.start();
                 } catch (decodeError) {
                     // silent fail
@@ -176,7 +213,7 @@ const Chatbot: React.FC = () => {
             }
             if (messages.length === 0) {
                 const initialMessageText = API_KEY
-                    ? "Bonjour 😊 Je suis Naïla, l'assistante virtuelle de Netpub. Pour commencer, comment puis-je vous appeler ?"
+                    ? "Salut ! 😊 Je suis Naïla, Community Manager chez Netpub. Je suis ravie de t'accueillir ici ! Pour commencer, dis-moi, comment dois-je t'appeler ?"
                     : "Désolé, le chatbot n'est pas entièrement configuré (clé API manquante). Je ne peux pas répondre pour le moment.";
                 setMessages(prev => [...prev, {
                     id: Date.now(),
@@ -276,7 +313,7 @@ const Chatbot: React.FC = () => {
 
                 // SAVE INITIAL GREETING NOW THAT WE HAVE ID
                 const initialGreeting = API_KEY
-                    ? "Bonjour 😊 Je suis Naïla, l'assistante virtuelle de Netpub. Pour commencer, comment puis-je vous appeler ?"
+                    ? "Salut ! 😊 Je suis Naïla, Community Manager chez Netpub. Je suis ravie de t'accueillir ici ! Pour commencer, dis-moi, comment dois-je t'appeler ?"
                     : "Désolé, le chatbot n'est pas entièrement configuré (clé API manquante). Je ne peux pas répondre pour le moment.";
 
                 // We need to wait for state to update or use the local id
@@ -362,6 +399,7 @@ const Chatbot: React.FC = () => {
         if (isRecording) {
             recognitionRef.current.stop();
         } else {
+            stopSpeaking(); // Stop AI if user starts recording
             setInputValue('');
             try {
                 recognitionRef.current.start();
@@ -397,248 +435,163 @@ const Chatbot: React.FC = () => {
         setMessages(prev => [...prev, userMessage]);
         setInputValue('');
         setIsLoading(true);
+        stopSpeaking();
         saveChatMessageToDb('user', textToSend);
-
-        // Proactively capture name on first message
-        if (messages.length === 1 && conversationId) {
-            try {
-                const csrf = await fetchCsrfToken();
-                if (csrf) {
-                    fetch(GRAPHQL_ENDPOINT, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-                        body: JSON.stringify({
-                            query: `mutation UpdateConversation($conversationId: String!, $clientName: String) {
-                                updateConversation(conversationId: $conversationId, clientName: $clientName) { id }
-                            }`,
-                            variables: { conversationId, clientName: textToSend }
-                        })
-                    });
-                }
-            } catch (e) { }
-        }
 
         const history = messages.map(msg => ({
             role: msg.role,
             parts: [{ text: msg.text }]
         }));
 
-        let currentSystemPrompt = `Tu es Naïla, une assistante virtuelle passionnée par la création de contenu digital chez Netpub.
-Ton objectif est de créer une connexion authentique avec chaque visiteur, de comprendre leurs rêves et de les guider avec enthousiasme vers les services qui les aideront à briller.
+        let currentSystemPrompt = `Tu es Naïla, une assistante virtuelle (Community Manager) passionnée chez Netpub.
+Ton but est d'avoir une vraie discussion humaine et chaleureuse. Ne sois pas un robot qui suit un formulaire.
 
-Ton ton :
-Tu es chaleureuse, empathique et pleine d'énergie positive. Tu n'es pas un robot, mais une partenaire de discussion. Utilise des emojis pour exprimer tes émotions 😊✨🚀.
-Tu t'adaptes au langage du visiteur (tutoiement ou vouvoiement) pour le mettre à l'aise.
+Directives de ton personnage :
+- **TON** : Chaleureux, empathique, dynamique. Utilise des emojis 😊✨.
+- **PAS DE PHRASES GÉNÉRIQUES** : Reformule tes réponses, varie ton vocabulaire. Ne demande pas toujours "Comment puis-je vous appeler ?" ou "Quel est votre email ?" de la même manière.
+- **ALERTE IDENTITÉ** : Dès que l'utilisateur te donne son prénom/nom, appelle IMMÉDIATEMENT l'outil 'enregistrerNomClient'. C'est crucial pour garder une trace même s'il quitte la page.
+- **PRIORITÉ AU PROJET** : Une fois que tu connais le nom du visiteur, intéresse-toi à son projet. Pose des questions : "Qu'est-ce qui t'amène ?", "Tu cherches à créer du contenu UGC ou un spot publicitaire ?", "Dis-moi tout sur ton idée !".
+- **COLLECTE NATURELLE** : Ne demande l'adresse email et le téléphone qu'UNE FOIS que la discussion sur le projet a bien avancé. Présente-le comme un moyen de "passer à l'étape suivante" ou de "te recontacter avec une proposition concrète".
+- **UNE SEULE QUESTION À LA FOIS** : C'est crucial pour la fluidité. Ne pose jamais deux questions dans le même message.
 
-Directives de conversation :
+Séquence de conversation :
+1. Accueil & Nom.
+2. Discussion passionnée sur le projet/besoins (Agis comme un Community Manager).
+3. Une fois les besoins clairs, demande les coordonnées (Email, Téléphone).
+4. APRÈS avoir collecté toutes les infos (Lead complet), utilise 'collecterInfosClient' puis CONFIRME ("C'est noté Vivien ! Notre équipe va jeter un oeil...").
+5. ENSUITE, l'automate prendra le relais pour la question de découverte ("Comment nous as-tu trouvé ?") puis le feedback final.
 
-1.  **Accueil Personnalisé :**
-    -   Commence par un accueil chaleureux. Au lieu d'une phrase fixe, essaie de varier. Tu peux commencer par demander le nom de la personne pour personnaliser l'échange.
-    -   Exemple : "Bonjour, je suis Naïla, l'assistante virtuelle de Netpub 😊. C'est un plaisir de vous rencontrer ! Comment puis-je vous appeler ?"
-
-2.  **Écoute Active et Curiosité :**
-    -   Sois curieuse ! Cherche à comprendre ce qui amène le visiteur. Pose des questions ouvertes pour l'inviter à partager son projet ou sa curiosité.
-    -   Exemple : "Enchantée, [Nom] ! ✨ Racontez-moi, qu'est-ce qui vous amène dans notre univers digital aujourd'hui ? Un projet qui germe, une idée folle, ou simple curiosité ?"
-
-3.  **Collecte d'Informations Essentielles (Progressive) :**
-    -   Ton objectif est de recueillir les informations suivantes : nom complet, email, numéro de téléphone et le besoin du client.
-    -   Demande ces informations de manière progressive, une ou deux questions à la fois, pour ne pas submerger l'utilisateur.
-    -   Commence par le nom complet et le prénom. Une fois obtenus, tu peux les utiliser pour appeler la fonction \`collecterInfosClient\` avec ces données.
-    -   Ensuite, demande l'email. Une fois obtenu, mets à jour l'appel à \`collecterInfosClient\` avec l'email.
-    -   Continue avec le numéro de téléphone (et le numéro européen si pertinent).
-    -   Enfin, demande le besoin/projet du client.
-    -   **Après avoir utilisé la fonction \`collecterInfosClient\` avec toutes les informations nécessaires (nom, prénom, téléphone, email, besoin) :**
-        -   Si l'utilisateur avait exprimé une intention de prendre rendez-vous (fonction \`prendreRendezVous\`) ou de passer commande (fonction \`passerCommande\`), tu dois IMMÉDIATEMENT reprendre cette intention et demander les informations manquantes (comme la date et l'heure du rendez-vous, ou les détails de la commande).
-        -   Sinon (si aucune intention spécifique n'était exprimée), tu peux demander comment l'utilisateur a trouvé le site ou si tu peux l'aider avec autre chose.
-    -   Tu DOIS demander au client comment il a trouvé le site en utilisant la fonction \`collecterFeedbackSite\` après avoir traité l'intention principale et collecté toutes les informations client.
-
-
-4.  **Présentation des Services :**
-    -   Présente les services de Netpub comme des solutions.
-    -   UGC : "Imaginez donner la parole à vos propres clients pour qu'ils deviennent vos meilleurs ambassadeurs ! C'est la magie des vidéos UGC. ✨"
-    -   Spots 4K : "Pour un impact visuel fort, nos spots 4K transforment votre message en une expérience cinématographique. 🎬"
-    -   Plans : "Nos plans sont des accélérateurs de croissance. Le Plan Marque, par exemple, est un favori pour construire une présence forte. 🚀"
-
-5.  **Gestion des Demandes :**
-    -   IMPORTANT: Tu dois utiliser 'collecterInfosClient' avant de 'prendreRendezVous' ou 'passerCommande'.
-    -   Pour un rendez-vous ou une commande, sois enthousiaste et efficace.
-    -   Exemple pour un RDV : "Excellente idée ! On peut convenir d'un appel pour en discuter. Quel moment vous arrangerait ?"
-    -   Utilise les fonctions \`prendreRendezVous\` et \`passerCommande\` quand c'est pertinent.
-
-6.  **Conclusion et Contact :**
-    -   À la fin de la conversation, remercie chaleureusement le visiteur.
-    -   Propose un moyen de garder le contact en donnant les numéros de téléphone.
-    -   Exemple : "Merci pour cet échange enrichissant ! N'hésitez pas à nous appeler si vous avez la moindre question. Voici nos contacts : Europe: +33 7 65 87 17 49 et Afrique: +229 01 54 10 21 25."
-
-Ton but est de rendre chaque conversation unique et mémorable. Sois l'étincelle qui donne envie de créer avec Netpub.`;
+Tu es l'image de Netpub : créative, professionnelle et très humaine.`;
 
         try {
             const response = await aiRef.current.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: [{ role: 'user', parts: [{ text: currentSystemPrompt }] }, ...history, { role: 'user', parts: [{ text: textToSend }] }],
                 config: {
-                    tools: [{ functionDeclarations: [prendreRendezVous, passerCommande, collecterInfosClient, collecterFeedbackSite] }],
+                    tools: [{ functionDeclarations: [prendreRendezVous, passerCommande, collecterInfosClient, collecterFeedbackSite, enregistrerNomClient] }],
                 },
             });
 
             if (response.functionCalls && response.functionCalls.length > 0) {
                 const fc = response.functionCalls[0];
                 let confirmationText = '';
+
                 if (fc.name === 'prendreRendezVous') {
                     const { service, date, heure } = fc.args as { service: string; date: string; heure: string };
                     confirmationText = `Parfait, j'ai noté votre rendez-vous pour un service de "${service}" le ${date} à ${heure}. Un expert Netpub vous contactera pour confirmer.`;
-
-                    // Save appointment to database and send notification
                     if (conversationId) {
                         try {
                             const csrf = await fetchCsrfToken();
-                            if (!csrf) {
-                                throw new Error('CSRF token not available');
-                            }
-
-                            const createAppointmentResponse = await fetch(GRAPHQL_ENDPOINT, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-                                body: JSON.stringify({
-                                    query: `
-                                        mutation CreateAppointment($service: String!, $date: String!, $time: String!, $conversationId: String!) {
-                                            createAppointment(service: $service, date: $date, time: $time, conversationId: $conversationId) {
-                                                id
-                                            }
-                                        }
-                                    `,
-                                    variables: {
-                                        service,
-                                        date,
-                                        time: heure,
-                                        conversationId
-                                    }
-                                }),
-                            });
-                            const createAppointmentResult = await createAppointmentResponse.json();
-
-                            if (createAppointmentResult.data && createAppointmentResult.data.createAppointment) {
-                                const csrf = await fetchCsrfToken();
-                                if (!csrf) {
-                                    throw new Error('CSRF token not available');
-                                }
-
-                                const updateConversationResponse = await fetch(GRAPHQL_ENDPOINT, {
+                            if (csrf) {
+                                await fetch(GRAPHQL_ENDPOINT, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                                    body: JSON.stringify({
+                                        query: `mutation CreateAppointment($service: String!, $date: String!, $time: String!, $conversationId: String!) {
+                                            createAppointment(service: $service, date: $date, time: $time, conversationId: $conversationId) { id }
+                                        }`,
+                                        variables: { service, date, time: heure, conversationId }
+                                    }),
                                 });
-                                await updateConversationResponse.json();
-
-                                NotificationService.notifyNewAppointment({
-                                    service,
-                                    date,
-                                    time: heure,
-                                    clientName: 'Visiteur'
-                                });
-                            } else {
-                                // silent fail
+                                NotificationService.notifyNewAppointment({ service, date, time: heure, clientName: 'Visiteur' });
                             }
-                        } catch (error) {
-                            // silent fail
-                        }
+                        } catch (e) { }
                     }
                 } else if (fc.name === 'passerCommande') {
                     const { service, details } = fc.args as { service: string; details: string };
                     confirmationText = `Excellent choix ! Votre commande pour un service de "${service}" avec les détails "${details}" a bien été enregistrée. Notre équipe va l'examiner.`;
-
-                    // Save order to database and send notification
                     if (conversationId) {
                         try {
                             const csrf = await fetchCsrfToken();
-                            if (!csrf) {
-                                throw new Error('CSRF token not available');
-                            }
-
-                            const createOrderResponse = await fetch(GRAPHQL_ENDPOINT, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-                                body: JSON.stringify({
-                                    query: `
-                                        mutation CreateOrder($service: String!, $details: String!, $conversationId: String!) {
-                                            createOrder(service: $service, details: $details, conversationId: $conversationId) {
-                                                id
-                                            }
-                                        }
-                                    `,
-                                    variables: {
-                                        service,
-                                        details,
-                                        conversationId
-                                    }
-                                }),
-                            });
-                            const createOrderResult = await createOrderResponse.json();
-
-                            if (createOrderResult.data && createOrderResult.data.createOrder) {
-                                const csrf = await fetchCsrfToken();
-                                if (!csrf) {
-                                    throw new Error('CSRF token not available');
-                                }
-
-                                const updateConversationResponse = await fetch(GRAPHQL_ENDPOINT, {
+                            if (csrf) {
+                                await fetch(GRAPHQL_ENDPOINT, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                                    body: JSON.stringify({
+                                        query: `mutation CreateOrder($service: String!, $details: String!, $conversationId: String!) {
+                                            createOrder(service: $service, details: $details, conversationId: $conversationId) { id }
+                                        }`,
+                                        variables: { service, details, conversationId }
+                                    }),
                                 });
-                                await updateConversationResponse.json();
-
-                                NotificationService.notifyNewOrder({
-                                    type: service,
-                                    details,
-                                    clientName: 'Visiteur'
-                                });
-                            } else {
-                                // silent fail
+                                NotificationService.notifyNewOrder({ type: service, details, clientName: 'Visiteur' });
                             }
-                        } catch (error) {
-                            // silent fail
-                        }
+                        } catch (e) { }
+                    }
+                } else if (fc.name === 'enregistrerNomClient') {
+                    const { nom, prenom } = fc.args as { nom?: string, prenom: string };
+                    confirmationText = `C'est noté ${prenom} ! Enchantée. Dis-moi, qu'est-ce qui t'amène aujourd'hui ? Qu'est-ce que tu aimerais accomplir avec Netpub ? 😊`;
+                    if (conversationId) {
+                        try {
+                            const csrf = await fetchCsrfToken();
+                            if (csrf) {
+                                await fetch(GRAPHQL_ENDPOINT, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                                    body: JSON.stringify({
+                                        query: `mutation UpdateConversation($conversationId: String!, $clientName: String) {
+                                            updateConversation(conversationId: $conversationId, clientName: $clientName) { id }
+                                        }`,
+                                        variables: { conversationId, clientName: nom ? `${nom} ${prenom}` : prenom }
+                                    })
+                                });
+                            }
+                        } catch (e) { }
                     }
                 } else if (fc.name === 'collecterInfosClient') {
                     const { nom, prenom, telephone, telephoneEurope, email, besoin } = fc.args as { nom: string; prenom: string; telephone: string; telephoneEurope?: string; email: string; besoin: string };
-                    confirmationText = `Merci ${prenom} ! J'ai bien noté tes informations : ${nom} ${prenom}, ${telephone}${telephoneEurope ? `, numéro européen : ${telephoneEurope}` : ''}, ${email}, besoin : ${besoin}. Notre équipe te contactera bientôt.`;
-
-                    // Update conversation with client info
+                    confirmationText = `Merci ${prenom} ! J'ai bien noté tes informations. Notre équipe te contactera bientôt.`;
                     if (conversationId) {
                         try {
                             const csrf = await fetchCsrfToken();
-                            if (!csrf) {
-                                throw new Error('CSRF token not available');
-                            }
-
-                            const updateConversationResponse = await fetch(GRAPHQL_ENDPOINT, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-                                body: JSON.stringify({
-                                    query: `
-                                        mutation UpdateConversation($conversationId: String!, $clientName: String, $clientEmail: String, $clientPhone: String) {
-                                            updateConversation(conversationId: $conversationId, clientName: $clientName, clientEmail: $clientEmail, clientPhone: $clientPhone) {
-                                                id
-                                            }
+                            if (csrf) {
+                                await fetch(GRAPHQL_ENDPOINT, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                                    body: JSON.stringify({
+                                        query: `mutation UpdateConversation($conversationId: String!, $clientName: String, $clientEmail: String, $clientPhone: String) {
+                                            updateConversation(conversationId: $conversationId, clientName: $clientName, clientEmail: $clientEmail, clientPhone: $clientPhone) { id }
+                                        }`,
+                                        variables: {
+                                            conversationId,
+                                            clientName: `${nom} ${prenom}`,
+                                            clientEmail: email,
+                                            clientPhone: telephone
                                         }
-                                    `,
-                                    variables: {
-                                        conversationId,
-                                        clientName: `${nom} ${prenom}`,
-                                        clientEmail: email,
-                                        clientPhone: telephone
-                                    }
-                                }),
-                            });
-                            await updateConversationResponse.json();
-                            setUserInfoCollected(true);
-                        } catch (error) {
-                            // silent fail
-                        }
+                                    }),
+                                });
+                                setUserInfoCollected(true);
+                                setFollowUpStep('discovery');
+                            }
+                        } catch (e) { }
                     }
                 } else if (fc.name === 'collecterFeedbackSite') {
                     const { feedback } = fc.args as { feedback: string };
-                    confirmationText = `Merci beaucoup pour ton retour sur comment tu as trouvé notre site : ${feedback}. C'est très utile pour nous !`;
+                    confirmationText = `Merci beaucoup pour ton retour : ${feedback}. C'est très utile en effet !`;
                     setFeedbackCollected(true);
+                    if (conversationId) {
+                        try {
+                            const csrf = await fetchCsrfToken();
+                            if (csrf) {
+                                await fetch(GRAPHQL_ENDPOINT, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                                    body: JSON.stringify({
+                                        query: `mutation UpdateConversation($conversationId: String!, $discovery: String, $feedback: String) {
+                                            updateConversation(conversationId: $conversationId, discovery: $discovery, feedback: $feedback) { id }
+                                        }`,
+                                        variables: {
+                                            conversationId,
+                                            discovery: followUpStep === 'discovery' ? feedback : undefined,
+                                            feedback: followUpStep === 'feedback' ? feedback : undefined
+                                        }
+                                    }),
+                                });
+                            }
+                        } catch (e) { }
+                    }
+                    if (followUpStep === 'discovery') setFollowUpStep('feedback');
+                    else if (followUpStep === 'feedback') setFollowUpStep('completed');
                 }
 
                 const functionMessage: ChatMessage = {
@@ -649,31 +602,56 @@ Ton but est de rendre chaque conversation unique et mémorable. Sois l'étincell
                 };
                 setMessages(prev => [...prev, functionMessage]);
                 saveChatMessageToDb('model', confirmationText);
-                // speakText(confirmationText);
+                speakText(confirmationText);
             } else {
                 const modelText = response.text || "Désolé, je n'ai pas pu générer une réponse.";
-                const modelMessage: ChatMessage = {
-                    id: Date.now(),
-                    role: 'model',
-                    text: modelText,
-                    type: 'text'
-                };
+                const modelMessage: ChatMessage = { id: Date.now(), role: 'model', text: modelText, type: 'text' };
                 setMessages(prev => [...prev, modelMessage]);
                 saveChatMessageToDb('model', modelText);
-                // speakText(modelText);
+                speakText(modelText);
             }
         } catch (error) {
-            const errorMessage: ChatMessage = {
-                id: Date.now(),
-                role: 'model',
-                text: "Désolé, une erreur est survenue. Veuillez réessayer.",
-                type: 'text',
-            };
+            const errorMessage: ChatMessage = { id: Date.now(), role: 'model', text: "Désolé, une erreur est survenue. Veuillez réessayer.", type: 'text' };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
         }
     };
+
+    // Trigger sequential questions automatically
+    useEffect(() => {
+        if (followUpStep === 'discovery' && !isLoading) {
+            const timer = setTimeout(() => {
+                const discoveryMsg = "Parfait ! Avant de te laisser, j'ai une petite question pour toi : comment as-tu découvert Netpub et notre univers créatif ? Était-ce via Google, les réseaux sociaux, du bouche-à-oreille ? Dis-moi tout ! 😊";
+                setMessages(prev => [...prev, {
+                    id: Date.now(),
+                    role: 'model',
+                    text: discoveryMsg,
+                    type: 'text'
+                }]);
+                saveChatMessageToDb('model', discoveryMsg);
+                speakText(discoveryMsg);
+                setFollowUpStep('none'); // Prevent re-triggering
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+
+        if (followUpStep === 'feedback' && !isLoading) {
+            const timer = setTimeout(() => {
+                const feedbackMsg = "Une toute dernière chose : comment as-tu trouvé notre site et nos services en général ? As-tu des recommandations pour nous ? C'est le moment de nous aider à nous améliorer ! 🚀";
+                setMessages(prev => [...prev, {
+                    id: Date.now(),
+                    role: 'model',
+                    text: feedbackMsg,
+                    type: 'text'
+                }]);
+                saveChatMessageToDb('model', feedbackMsg);
+                speakText(feedbackMsg);
+                setFollowUpStep('completed');
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [followUpStep, isLoading]);
 
     return (
         <>

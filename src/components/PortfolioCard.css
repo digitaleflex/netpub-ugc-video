@@ -106,3 +106,60 @@
   background: rgba(255, 255, 255, 0.4);
   transform: translateY(-2px);
 }
+@media (max-width: 768px) {
+  .portfolio-item-card.influencer-card {
+    border-radius: 20px;
+  }
+
+  /* Hide badges as requested for mobile space saving */
+  .portfolio-item-card .influencer-badges-row {
+    display: none;
+  }
+
+  .portfolio-item-card .influencer-name-age {
+    font-size: 1.1rem; /* Significantly reduced */
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .portfolio-item-card .influencer-carousel-nav {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* Maintain original circle styles - overrides removed */
+
+  .portfolio-item-card .circle-label {
+    top: -22px;
+    font-size: 0.6rem;
+    padding: 2px 8px;
+  }
+
+  .portfolio-item-card .carousel-dots {
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  .portfolio-item-card .influencer-bio-row {
+    font-size: 0.8rem;
+    line-height: 1.3;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .portfolio-item-card .carousel-dot {
+    width: 4px;
+    height: 4px;
+  }
+
+  .portfolio-item-card .carousel-dot.active {
+    width: 14px;
+  }
+}

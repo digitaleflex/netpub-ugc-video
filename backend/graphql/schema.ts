@@ -43,6 +43,8 @@ export const typeDefs = gql`
     messages: [ChatMessage!]!
     appointments: [Appointment!]!
     orders: [Order!]!
+    discovery: String
+    feedback: String
     user: User
   }
 
@@ -196,6 +198,8 @@ export const typeDefs = gql`
       clientName: String
       clientEmail: String
       clientPhone: String
+      discovery: String
+      feedback: String
     ): Conversation!
 
     createAppointment(
@@ -263,5 +267,6 @@ export const typeDefs = gql`
     deleteConversation(conversationId: ID!): Boolean!
     addNoteToConversation(conversationId: ID!, note: String!): Boolean!
     addChatMessage(conversationId: ID!, sender: String!, text: String!): ChatMessage!
+    exportAllData: Boolean!
   }
 `;
