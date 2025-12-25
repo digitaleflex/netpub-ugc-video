@@ -3,6 +3,10 @@ let csrfToken: string | null = null;
 export const fetchCsrfToken = async (maxRetries = 5, retryDelayMs = 1000): Promise<string> => {
   if (csrfToken) return csrfToken;
 
+  // Add a small initial delay on the very first call to give the backend time to warm up
+  // This avoids the noisy "ECONNREFUSED" logs in the terminal during startup.
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
   for (let i = 0; i < maxRetries; i++) {
     try {
       const apiUrl = (import.meta as any).env.VITE_API_URL || '';
@@ -10,7 +14,9 @@ export const fetchCsrfToken = async (maxRetries = 5, retryDelayMs = 1000): Promi
       if (!response.ok) {
         // Retry on 5xx errors which often happen during startup/proxying
         if (response.status >= 500 && i < maxRetries - 1) {
-          console.warn(`Attempt ${i + 1} failed to fetch CSRF token (Status: ${response.status}). Retrying in ${retryDelayMs}ms...`);
+          if (i >= 2) {
+            console.warn(`Attempt ${i + 1} failed to fetch CSRF token (Status: ${response.status}). Retrying in ${retryDelayMs}ms...`);
+          }
           await new Promise(resolve => setTimeout(resolve, retryDelayMs));
           continue;
         }
@@ -23,7 +29,9 @@ export const fetchCsrfToken = async (maxRetries = 5, retryDelayMs = 1000): Promi
     } catch (error: any) {
       // Retry on network errors (like TypeError: Failed to fetch) during startup
       if (i < maxRetries - 1) {
-        console.warn(`Attempt ${i + 1} failed to fetch CSRF token. Retrying in ${retryDelayMs}ms... Error: ${error.message}`);
+        if (i >= 2) {
+          console.warn(`Attempt ${i + 1} failed to fetch CSRF token. Retrying in ${retryDelayMs}ms... Error: ${error.message}`);
+        }
         await new Promise(resolve => setTimeout(resolve, retryDelayMs));
         continue;
       }
